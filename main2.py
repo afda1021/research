@@ -72,8 +72,7 @@ if __name__ == '__main__':
     d_nx, d_ny = 512, 512
     input_shape = (d_ny, d_nx, 1)
 
-    #path_train = "C:/Users/y.inoue/Desktop/inoue/研究関係/下馬場先生/hol_horn_low_accuracy_16_4_21_small/" #大学
-    path_train = "C:/Users/y.inoue/Desktop/研究室関係/下馬場先生/hol_horn_low_accuracy_16_4_21_small/" #自分用
+    path_train = "C:/Users/y.inoue/Desktop/研究室関係/下馬場先生/hol_horn_low_accuracy_16_4_21_small/"
     
     #loss_func = "mse"  #損失関数
     lr=1e-4  #lerning rate
