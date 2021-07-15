@@ -111,6 +111,7 @@ def rescell(data, filters, kernel_size, option=False):
     x=Activation('relu')(x)
     return x
 
+# (512,512,1) → 10
 def ResNet(img_rows, img_cols, img_channels, x_train):
 
 	input=Input(shape=(img_rows,img_cols,img_channels))
@@ -146,3 +147,17 @@ def ResNet(img_rows, img_cols, img_channels, x_train):
 	x=Dense(units=10,kernel_initializer="he_normal",activation="softmax")(x)
 	model=Model(inputs=input,outputs=[x])
 	return model
+
+# (512,512,1) → (512,512,1)
+def ResNet2(img_rows, img_cols, img_channels, x_train):
+    input=Input(shape=(img_rows,img_cols,img_channels))
+    x=Conv2D(32,(7,7), padding="same", input_shape=x_train.shape[1:],activation="relu")(input)
+	# x=MaxPooling2D(pool_size=(2,2))(x)
+    
+    x=rescell(x,64,(3,3))
+    x=rescell(x,64,(3,3))
+    x=rescell(x,64,(3,3))
+    x=rescell(x,1,(3,3))
+    
+    model=Model(inputs=input,outputs=[x])
+    return model
