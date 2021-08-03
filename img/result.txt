@@ -1,0 +1,17 @@
+BatchNormalizationあり < BatchNormalizationなし
+
+・BatchNormalizationなし、shortcutなし(CNN)
+rescell：1層 < 2層
+
+・BatchNormalizationなし、shortcutあり
+rescell：1層 < 2層
+
+・BatchNormalizationなし、rescell 1層
+shortcutなし < shortcutあり
+
+・BatchNormalizationなし、rescell 2層
+shortcutなし < shortcutあり
+
+
+ResNet_Best：BatchNormalizationなし、shortcutあり、深層、出力linear、入力→出力のAddなし？
+	loss_ResNet_short4_noadd.png

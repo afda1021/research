@@ -1,3 +1,19 @@
+#----------------------GPUの上限とか設定する何か？----------------------------
+#https://qiita.com/masudam/items/c229e3c75763e823eed5
+import tensorflow as tf
+gpus = tf.config.experimental.list_physical_devices('GPU')
+if gpus:
+  try:
+    # Currently, memory growth needs to be the same across GPUs
+    for gpu in gpus:
+      tf.config.experimental.set_memory_growth(gpu, True)
+    logical_gpus = tf.config.experimental.list_logical_devices('GPU')
+    print(len(gpus), "Physical GPUs,", len(logical_gpus), "Logical GPUs")
+  except RuntimeError as e:
+    # Memory growth must be set before GPUs have been initialized
+    print(e)
+#---------------------------------------------------------------------------
+
 import os
 import keras
 from keras import optimizers
@@ -69,18 +85,22 @@ def loss_mse_l1(y_true, y_pred):
 
 if __name__ == '__main__':
     training = 0 #0：学習、1：テスト(jpg)、2： テスト(bmp)？、3：テスト(jpg)？、4：再生計算？
-    model_type = 1 #0：U-Net、1：ResNet
+    model_type = 0 #0：U-Net、1：ResNet
+    dataset = 0 #0：hol_horn、1：SUNRGBD2
 
     batch_size = 10
     epochs = 10
 
     modelDirectory = os.getcwd()  #カレントディレクトリを取得
 
-    nx, ny = 512, 512
-    d_nx, d_ny = 512, 512
+    nx, ny = 128, 128 #512, 512
+    d_nx, d_ny = 128, 128 #512, 512
     input_shape = (d_ny, d_nx, 1)
 
-    path_train = "C:/Users/y.inoue/Desktop/研究室関係/下馬場先生/hol_horn_low_accuracy_16_4_21_small/"
+    if dataset == 0:
+        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
+    elif dataset == 1:
+        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/SUNRGBD2/"
     
     #loss_func = "mse"  #損失関数
     lr=1e-4  #lerning rate
@@ -92,6 +112,7 @@ if __name__ == '__main__':
     elif model_type == 1:
         x_train = util.load_dataset2(path_train+"hol_fix%d"+".npy", input_shape,(ny,nx), (0,1))
         net = model.ResNet2(d_nx, d_ny, 1, x_train)  #ResNetのモデル
+        # net = model.cnn(d_nx, d_ny, 1, x_train)  #cnnのモデル
         model_name = "ResNet"
     
     net.compile(loss=loss_mse_l1, optimizer=adam, metrics=['accuracy'])
@@ -100,9 +121,9 @@ if __name__ == '__main__':
     if training == 0: #学習、モデルの保存、学習曲線の表示と保存
         ext = ".npy"
         # 訓練データの読み込み
-        x_train = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (0,30)) #(0,496)
+        x_train = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (0,140)) #(0,496)
         print("x_shae : ", x_train.shape)  # (枚数,x,y,1)
-        y_train = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (0,30))
+        y_train = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (0,140))
         print("y_shae : ", x_train.shape)
         # 評価データの読み込み
         x_val = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (140,150)) #(496,506)
@@ -148,15 +169,16 @@ if __name__ == '__main__':
     
     elif training == 1: #入力画像(jpg)から予測画像(jpg)を生成し保存
         ext = ".jpg"
-        num = 0
+        num = 247
         #データセットからjpg画像を読み込み
-        x_test = np.array(Image.open(path_train+"/hol_fix"+str(num)+ext)) #Imageで開いた後配列に変換(mode：L)
+        x_test = np.array(Image.open(path_train+"/hol_fix"+str(num)+ext).resize((nx, ny))) #Imageで開いた後配列に変換(mode：L)
         print("x_shape : ", x_test.shape)
         x_test = x_test[np.newaxis, ...]
-        x_test = x_test.reshape(1,512,512,1)
+        x_test = x_test.reshape(1,nx,ny,1)
         print("x_shape : ", x_test.shape)
         #モデルを読み込み
         fname_weight = modelDirectory + "/model_" + model_name + ".hdf5"
+        #fname_weight = modelDirectory + "/model.hdf5"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)
@@ -169,7 +191,7 @@ if __name__ == '__main__':
         if pil_img.mode != 'L': # #L：8ビットピクセル画像。黒と白  RGB
             pil_img = pil_img.convert('L') #画像をLに変換  RGB
             print("L")
-        pil_img.save(modelDirectory+"/predict/pre"+str(num)+ext)
+        pil_img.save(modelDirectory+"/predict/pre_"+model_name+str(num)+ext)
 
     elif training == 2: #入力画像(npy)から予測画像(bmp)を生成しようとした、未完成
         ext = ".npy"

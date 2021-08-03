@@ -4,6 +4,7 @@ from keras.layers.advanced_activations import LeakyReLU
 from keras.models import Model
 
 from keras.layers import Lambda
+from tensorflow.python.keras.backend import conv2d
 import layer_diffract as ld
 
 # U-Netのモデルを返す 再生画像で学習
@@ -60,15 +61,15 @@ def unet2(input_shape=(1, 128, 1) ):
     img_input = Input(shape=input_shape)  #入力層 shape =(512,512,1)
 
     # ダウンサンプリング
-    m1 = Conv2D(n_filt, filt_size, padding='same')(img_input) #shape (512,512,1)=>(510,510,16)
+    m1 = Conv2D(n_filt, filt_size, padding='same')(img_input) #shape (512,512,1)=>(512,512,16)
     m1 = LeakyReLU()(m1)  #活性化関数
-    p1 = MaxPooling2D(pool_size=(2, 2))(m1)  #プーリング shape (510,510,16)=>(255,255,16)
+    p1 = MaxPooling2D(pool_size=(2, 2))(m1)  #プーリング shape (512,512,16)=>(256,256,16)
     
-    m2 = Conv2D(n_filt, filt_size, padding='same')(p1) #shape (255,255,16)=>(253,253,16)
+    m2 = Conv2D(n_filt, filt_size, padding='same')(p1) #shape (256,256,16)=>(256,256,16)
     m2 = LeakyReLU()(m2)
-    p2 = MaxPooling2D(pool_size=(2, 2))(m2)
+    p2 = MaxPooling2D(pool_size=(2, 2))(m2) #shape (256,256,16)=>(128,128,16)
 
-    m3 = Conv2D(n_filt, filt_size, padding='same')(p2)
+    m3 = Conv2D(n_filt, filt_size, padding='same')(p2) #shape (128,128,16)=>(128,128,16)
     
     # アップサンプリング
     u2 = concatenate([UpSampling2D(size=(2, 2))(m3), m2])
@@ -148,16 +149,44 @@ def ResNet(img_rows, img_cols, img_channels, x_train):
 	model=Model(inputs=input,outputs=[x])
 	return model
 
+def rescell2(data, filters, kernel_size):
+    x=Conv2D(filters=filters,kernel_size=kernel_size,strides=(1,1),padding="same")(data)
+    # x=BatchNormalization()(x)
+    x=Activation('relu')(x)
+    
+    data=Conv2D(filters=int(x.shape[3]), kernel_size=(1,1), strides=(1,1), padding="same")(data)
+    x=Conv2D(filters=filters,kernel_size=kernel_size,strides=(1,1),padding="same")(x)
+    # x=BatchNormalization()(x)
+    x=add([x,data])
+    x=Activation('relu')(x)
+    return x
+
 # (512,512,1) → (512,512,1)
 def ResNet2(img_rows, img_cols, img_channels, x_train):
     input=Input(shape=(img_rows,img_cols,img_channels))
     x=Conv2D(32,(7,7), padding="same", input_shape=x_train.shape[1:],activation="relu")(input)
 	# x=MaxPooling2D(pool_size=(2,2))(x)
     
-    x=rescell(x,64,(3,3))
-    x=rescell(x,64,(3,3))
-    x=rescell(x,64,(3,3))
-    x=rescell(x,1,(3,3))
+    x=rescell2(x,64,(3,3))
+    x=rescell2(x,64,(3,3))
+    x=rescell2(x,64,(3,3))
+    
+    x=rescell2(x,128,(3,3))
+    x=rescell2(x,128,(3,3))
+    x=rescell2(x,128,(3,3))
+
+    # x=rescell(x,1,(3,3))
+    # x = Add()([x, input])
+    x=Conv2D(1,(3,3), padding="same", input_shape=x.shape[1:],activation="linear")(x) #reluよりlinearの方がよかった
     
     model=Model(inputs=input,outputs=[x])
+    return model
+
+# (512,512,1) → (512,512,1)
+def cnn(img_rows, img_cols, img_channels, x_train):
+    input = Input(shape=(img_rows,img_cols,img_channels))
+    x = Conv2D(32, (3,3), input_shape=(img_rows, img_cols, 1), activation="relu", padding="same")(input)
+    x = Conv2D(64, (3,3), input_shape=x.shape[1:], activation="relu", padding="same")(x)
+    x = Conv2D(1, (3,3), input_shape=x.shape[1:], activation="relu", padding="same")(x)
+    model = Model(inputs=input, outputs=[x])
     return model
