@@ -16,7 +16,7 @@ def load_dataset2(path, div_shape, org_shape, n_range):
     cnt = 0
     for n_file in range(n_start, n_start+num):
         fname = path % n_file  #ファイル名('～/hol_fix1.npy')
-        t = np.load(fname)  #ファイル読み込み(x,y)
+        t = np.load(fname)  #ファイル読み込み(y,x,1)
 
         for i in range(0,ny,dy):
             for j in range(0,nx,dx):

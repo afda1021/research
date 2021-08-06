@@ -1,3 +1,5 @@
+## dataset：SUNRGBD2
+
 #----------------------GPUの上限とか設定する何か？----------------------------
 #https://qiita.com/masudam/items/c229e3c75763e823eed5
 import tensorflow as tf
@@ -50,7 +52,7 @@ def plot_loss(history, model_name):
     plt.grid()
     plt.xlabel('epoch')
     plt.ylabel('loss')
-    plt.savefig("./img/loss_"+model_name+".png") #plt.savefig("./img/graph.eps",dpi=600)
+    plt.savefig("./img_sun/loss_"+model_name+".png") #plt.savefig("./img/graph.eps",dpi=600)
     plt.show()
 
 # 損失の正答率をプロット
@@ -73,7 +75,7 @@ def plot_accuracy(history, model_name):
     plt.grid()
     plt.xlabel('epoch')
     plt.ylabel('accuracy')
-    plt.savefig("./img/accuracy_"+model_name+".png") #plt.savefig("./img/graph.eps",dpi=600)
+    plt.savefig("./img_sun/accuracy_"+model_name+".png") #plt.savefig("./img/graph.eps",dpi=600)
     plt.show()
 
 # 損失関数
@@ -84,23 +86,19 @@ def loss_mse_l1(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    training = 0 #0：学習、1：テスト(jpg)、2： テスト(bmp)？、3：テスト(jpg)？、4：再生計算？
-    model_type = 0 #0：U-Net、1：ResNet
-    dataset = 0 #0：hol_horn、1：SUNRGBD2
+    training = 1 #0：学習、1：テスト(jpg)、2： テスト(bmp)？、3：テスト(jpg)？、4：再生計算？
+    model_type = 1 #0：U-Net、1：ResNet
 
     batch_size = 10
     epochs = 10
 
     modelDirectory = os.getcwd()  #カレントディレクトリを取得
 
-    nx, ny = 128, 128 #512, 512
-    d_nx, d_ny = 128, 128 #512, 512
+    nx, ny = 256, 256
+    d_nx, d_ny = 256, 256
     input_shape = (d_ny, d_nx, 1)
 
-    if dataset == 0:
-        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
-    elif dataset == 1:
-        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/SUNRGBD2/"
+    path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/SUNRGBD2/"
     
     #loss_func = "mse"  #損失関数
     lr=1e-4  #lerning rate
@@ -110,7 +108,7 @@ if __name__ == '__main__':
         net = model.unet2(input_shape)  #U-Netのモデル
         model_name = "unet"
     elif model_type == 1:
-        x_train = util.load_dataset2(path_train+"hol_fix%d"+".npy", input_shape,(ny,nx), (0,1))
+        x_train = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+".npy", input_shape,(ny,nx), (1,2))
         net = model.ResNet2(d_nx, d_ny, 1, x_train)  #ResNetのモデル
         # net = model.cnn(d_nx, d_ny, 1, x_train)  #cnnのモデル
         model_name = "ResNet"
@@ -121,19 +119,19 @@ if __name__ == '__main__':
     if training == 0: #学習、モデルの保存、学習曲線の表示と保存
         ext = ".npy"
         # 訓練データの読み込み
-        x_train = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (0,140)) #(0,496)
+        x_train = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1,1201)) #(0,496)
         print("x_shae : ", x_train.shape)  # (枚数,x,y,1)
-        y_train = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (0,140))
-        print("y_shae : ", x_train.shape)
+        y_train = util.load_dataset2(path_train+"hol/hol%04d.jpg"+ext, input_shape,(ny,nx), (1,1201))
+        print("y_shae : ", y_train.shape)
         # 評価データの読み込み
-        x_val = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (140,150)) #(496,506)
+        x_val = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1201,1448)) #(496,506)
         print("x_shae : ", x_val.shape)
-        y_val = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (140,150))
+        y_val = util.load_dataset2(path_train+"hol/hol%04d.jpg"+ext, input_shape,(ny,nx), (1201,1448))
         print("y_shae : ", y_val.shape)
         # テストデータの読み込み(予測用)
-        x_test = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (157,158)) #(506,507)
+        x_test = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1448,1449)) #(506,507)
         print("x_shae : ", x_test.shape)
-        y_test = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (157,158))
+        y_test = util.load_dataset2(path_train+"hol/hol%04d.jpg"+ext, input_shape,(ny,nx), (1448,1449))
 
         x_train = x_train.astype('float32')
         y_train = y_train.astype('float32')
@@ -143,7 +141,7 @@ if __name__ == '__main__':
 
         ### callbacks 
         cp_cb = keras.callbacks.ModelCheckpoint( #model~.hdf5にモデルを保存
-                filepath = "model_" + model_name + ".hdf5",
+                filepath = "model_sun/model_" + model_name + ".hdf5",
                 monitor='val_loss', #監視する値
                 verbose=1, save_best_only=True, mode='auto')
         csv_logger = CSVLogger('model.log') #model.logにログを書く
@@ -169,15 +167,15 @@ if __name__ == '__main__':
     
     elif training == 1: #入力画像(jpg)から予測画像(jpg)を生成し保存
         ext = ".jpg"
-        num = 247
+        num = 248
         #データセットからjpg画像を読み込み
-        x_test = np.array(Image.open(path_train+"/hol_fix"+str(num)+ext).resize((nx, ny))) #Imageで開いた後配列に変換(mode：L)
+        x_test = np.array(Image.open(path_train+"/rgb_resize/rgb"+str(num).zfill(4)+ext).resize((nx, ny)).convert('L')) #Imageで開いた後配列に変換(mode：L)
         print("x_shape : ", x_test.shape)
         x_test = x_test[np.newaxis, ...]
         x_test = x_test.reshape(1,nx,ny,1)
         print("x_shape : ", x_test.shape)
         #モデルを読み込み
-        fname_weight = modelDirectory + "/model_" + model_name + ".hdf5"
+        fname_weight = modelDirectory + "/model_sun/model_" + model_name + ".hdf5"
         #fname_weight = modelDirectory + "/model.hdf5"
         net.load_weights(fname_weight)
         #予測
@@ -191,7 +189,7 @@ if __name__ == '__main__':
         if pil_img.mode != 'L': # #L：8ビットピクセル画像。黒と白  RGB
             pil_img = pil_img.convert('L') #画像をLに変換  RGB
             print("L")
-        pil_img.save(modelDirectory+"/predict/pre_"+model_name+str(num)+ext)
+        pil_img.save(modelDirectory+"/img_sun/predict/pre_"+model_name+str(num)+ext)
 
     elif training == 2: #入力画像(npy)から予測画像(bmp)を生成しようとした、未完成
         ext = ".npy"
@@ -214,7 +212,7 @@ if __name__ == '__main__':
         # x_test = util.as_img(x_test,input_shape,(d_ny,d_nx))
         # x_test = x_test.reshape(512,512,1)
         x_test = x_test[0]
-        predict_path = "./predict/pre.bmp"
+        predict_path = "./img_sun/predict/pre.bmp"
         cv2.imwrite(predict_path, x_test)
 
     elif training == 3: #予測画像を再生計算して保存
@@ -245,7 +243,7 @@ if __name__ == '__main__':
         if pil_img.mode != 'RGB':
             pil_img = pil_img.convert('RGB') #画像をRGBに変換
             print("RGB")
-        pil_img.save(modelDirectory+"/predict/rec_pre"+str(num)+ext)
+        pil_img.save(modelDirectory+"/img_sun/predict/rec_pre"+str(num)+ext)
     
     elif training == 4: #入力画像を再生計算して保存
         ext = ".jpg"
@@ -270,11 +268,11 @@ if __name__ == '__main__':
         if pil_img.mode != 'L':
             pil_img = pil_img.convert('L') #画像をRGBに変換
             print("L")
-        pil_img.save(modelDirectory+"/img/rex_x_test"+str(num)+ext)
+        pil_img.save(modelDirectory+"/img_sun/rex_x_test"+str(num)+ext)
 
     elif training == 5: #実験
         x_test = Image.open(path_train+"/hol_fix0.jpg")
-        x_test = Image.open(modelDirectory+"/predict/pre0.jpg")
+        x_test = Image.open(modelDirectory+"/img_sun/predict/pre0.jpg")
         print("type",type(x_test))
         print("mode",x_test.mode)
         x_test = np.array(x_test)
@@ -285,4 +283,4 @@ if __name__ == '__main__':
         # if pil_img.mode != 'RGB':
         #     pil_img = pil_img.convert('RGB') #画像をRGBに変換
         #     print("RGB")
-        pil_img.save(modelDirectory+"/img/sample.png")
+        pil_img.save(modelDirectory+"/img_sun/sample.png")
