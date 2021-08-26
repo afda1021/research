@@ -86,11 +86,11 @@ def loss_mse_l1(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    training = 1 #0：学習、1：テスト(jpg)、2： テスト(bmp)？、3：テスト(jpg)？、4：再生計算？
-    model_type = 1 #0：U-Net、1：ResNet
+    training = 0 #0：学習、1：テスト(jpg)、2： テスト(bmp)？、3：テスト(jpg)？、4：再生計算？
+    model_type = 0 #0：U-Net、1：ResNet
 
     batch_size = 10
-    epochs = 10
+    epochs = 1
 
     modelDirectory = os.getcwd()  #カレントディレクトリを取得
 
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     adam = optimizers.Adam(lr=lr)
 
     if model_type == 0:
-        net = model.unet2(input_shape)  #U-Netのモデル
+        net = model.unet2_complex(input_shape)  #U-Netのモデル
         model_name = "unet"
     elif model_type == 1:
         x_train = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+".npy", input_shape,(ny,nx), (1,2))
@@ -120,18 +120,19 @@ if __name__ == '__main__':
         ext = ".npy"
         # 訓練データの読み込み
         x_train = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1,1201)) #(0,496)
-        print("x_shae : ", x_train.shape)  # (枚数,x,y,1)
-        y_train = util.load_dataset2(path_train+"hol/hol%04d.jpg"+ext, input_shape,(ny,nx), (1,1201))
-        print("y_shae : ", y_train.shape)
+        print("x_train : ", x_train.shape)  # (枚数,x,y,1)
+        y_train = util.load_dataset_complex(path_train+"hol/hol%04d.jpg"+ext,(ny,nx), (1,1201))
+        print("y_train : ", y_train.shape)
         # 評価データの読み込み
         x_val = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1201,1448)) #(496,506)
-        print("x_shae : ", x_val.shape)
-        y_val = util.load_dataset2(path_train+"hol/hol%04d.jpg"+ext, input_shape,(ny,nx), (1201,1448))
-        print("y_shae : ", y_val.shape)
+        print("x_val : ", x_val.shape)
+        y_val = util.load_dataset_complex(path_train+"hol/hol%04d.jpg"+ext,(ny,nx), (1201,1448))
+        print("y_val : ", y_val.shape)
         # テストデータの読み込み(予測用)
         x_test = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1448,1449)) #(506,507)
-        print("x_shae : ", x_test.shape)
-        y_test = util.load_dataset2(path_train+"hol/hol%04d.jpg"+ext, input_shape,(ny,nx), (1448,1449))
+        print("x_test : ", x_test.shape)
+        y_test = util.load_dataset_complex(path_train+"hol/hol%04d.jpg"+ext,(ny,nx), (1448,1449))
+        print("y_test : ", y_test.shape)
 
         x_train = x_train.astype('float32')
         y_train = y_train.astype('float32')
@@ -182,10 +183,15 @@ if __name__ == '__main__':
         pre = net.predict(x_test, verbose=0)
         print("pre_shape : ", pre.shape)
         pre = pre[0]
-        pre = pre[:,:,0]
-        print("pre_shape : ", pre.shape)
+        #実部,虚部を合体
+        pre_complex = np.empty((nx, ny), dtype= complex)
+        for i in range(nx):
+            for j in range(ny):
+                pre_complex[i,j] = complex(pre[i,j,0], pre[i,j,1])
+        print(pre_complex)
+        print("pre_shape : ", pre_complex.shape)
         #画像を保存
-        pil_img = Image.fromarray(pre)
+        pil_img = Image.fromarray(pre_complex)
         if pil_img.mode != 'L': # #L：8ビットピクセル画像。黒と白  RGB
             pil_img = pil_img.convert('L') #画像をLに変換  RGB
             print("L")

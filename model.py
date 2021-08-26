@@ -91,6 +91,45 @@ def unet2(input_shape=(1, 128, 1) ):
 
     return model
 
+# U-Netのモデルを返す(複素数画像) ホログラムで学習
+def unet2_complex(input_shape=(1, 128, 1) ):
+    filt_size = 3  #フィルターのサイズ
+    rate = 1
+    resnet_flag = 0
+    n_filt = 16  #フィルターの数
+    img_input = Input(shape=input_shape)  #入力層 shape =(512,512,1)
+
+    # ダウンサンプリング
+    m1 = Conv2D(n_filt, filt_size, padding='same')(img_input) #shape (512,512,1)=>(512,512,16)
+    m1 = LeakyReLU()(m1)  #活性化関数
+    p1 = MaxPooling2D(pool_size=(2, 2))(m1)  #プーリング shape (512,512,16)=>(256,256,16)
+    
+    m2 = Conv2D(n_filt, filt_size, padding='same')(p1) #shape (256,256,16)=>(256,256,16)
+    m2 = LeakyReLU()(m2)
+    p2 = MaxPooling2D(pool_size=(2, 2))(m2) #shape (256,256,16)=>(128,128,16)
+
+    m3 = Conv2D(n_filt, filt_size, padding='same')(p2) #shape (128,128,16)=>(128,128,16)
+    
+    # アップサンプリング
+    u2 = concatenate([UpSampling2D(size=(2, 2))(m3), m2])
+    u2 = Conv2D(n_filt, filt_size, padding='same')(u2)
+    u2 = LeakyReLU()(u2)
+
+    u1 = concatenate([UpSampling2D(size=(2, 2))(u2), m1])
+    u1 = Conv2D(n_filt, filt_size, padding='same')(u1)
+    u1 = LeakyReLU()(u1)
+    
+    m = Conv2D(n_filt, filt_size, padding="same")(u1)
+    m = Add()([m, img_input])
+    m = LeakyReLU()(m)
+    m = Conv2D(2, (1, 1), padding="same")(m)
+    
+    m = Activation("linear")(m)
+    
+    model = Model(img_input, m)
+
+    return model
+
 
 from keras.layers import Dense, Dropout, Activation, Flatten, Input, add
 from keras.layers import Conv2D, MaxPooling2D, AveragePooling2D
