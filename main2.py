@@ -2,6 +2,7 @@
 
 #----------------------GPUの上限とか設定する何か？----------------------------
 #https://qiita.com/masudam/items/c229e3c75763e823eed5
+from types import prepare_class
 import tensorflow as tf
 gpus = tf.config.experimental.list_physical_devices('GPU')
 if gpus:
@@ -31,6 +32,7 @@ import numpy as np
 # 再生計算用
 from keras.layers import Lambda
 import layer_diffract as ld
+import math
 
 # 損失の履歴をプロット
 def plot_loss(history, model_name):
@@ -86,11 +88,11 @@ def loss_mse_l1(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    training = 0 #0：学習、1：テスト(jpg)、2： テスト(bmp)？、3：テスト(jpg)？、4：再生計算？
-    model_type = 0 #0：U-Net、1：ResNet
+    training = 3 #0：学習、1：テスト(位相画像jpg)、2:テスト(再生像jpg)、3： 正解画像(再生像jpg)、4：テスト(jpg)？、5：再生計算？
+    model_type = 1 #0：U-Net、1：ResNet
 
     batch_size = 10
-    epochs = 1
+    epochs = 30
 
     modelDirectory = os.getcwd()  #カレントディレクトリを取得
 
@@ -109,7 +111,7 @@ if __name__ == '__main__':
         model_name = "unet"
     elif model_type == 1:
         x_train = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+".npy", input_shape,(ny,nx), (1,2))
-        net = model.ResNet2(d_nx, d_ny, 1, x_train)  #ResNetのモデル
+        net = model.ResNet2_complex(d_nx, d_ny, 1, x_train)  #ResNetのモデル
         # net = model.cnn(d_nx, d_ny, 1, x_train)  #cnnのモデル
         model_name = "ResNet"
     
@@ -119,9 +121,9 @@ if __name__ == '__main__':
     if training == 0: #学習、モデルの保存、学習曲線の表示と保存
         ext = ".npy"
         # 訓練データの読み込み
-        x_train = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1,1201)) #(0,496)
+        x_train = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1,601)) #(0,496)
         print("x_train : ", x_train.shape)  # (枚数,x,y,1)
-        y_train = util.load_dataset_complex(path_train+"hol/hol%04d.jpg"+ext,(ny,nx), (1,1201))
+        y_train = util.load_dataset_complex(path_train+"hol/hol%04d.jpg"+ext,(ny,nx), (1,601))
         print("y_train : ", y_train.shape)
         # 評価データの読み込み
         x_val = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1201,1448)) #(496,506)
@@ -156,17 +158,18 @@ if __name__ == '__main__':
         print("pre shape : ", pre.shape)
         nx = x_test.shape[2]
         ny = x_test.shape[1]
-        x_test = util.as_img(x_test,input_shape,(d_ny,d_nx))  # 入力画像 (x,y)
-        y_test = util.as_img(y_test,input_shape,(d_ny,d_nx))  # 正解画像
-        pre = util.as_img(pre,input_shape,(d_ny,d_nx))  # 予測画像
+        # x_test = util.as_img(x_test,input_shape,(d_ny,d_nx))  # 入力画像 (x,y)
+        # y_test = util.as_img(y_test,input_shape,(d_ny,d_nx))  # 正解画像
+        # pre = util.as_img(pre,input_shape,(d_ny,d_nx))  # 予測画像
         print(x_test.shape)
 
         # 損失をプロット, 保存
         plot_loss(history, model_name)
         # 正答率をプロット, 保存
         plot_accuracy(history, model_name)
-    
-    elif training == 1: #入力画像(jpg)から予測画像(jpg)を生成し保存
+
+
+    elif training == 1: #入力画像(jpg)から位相予測画像(jpg)を生成し保存
         ext = ".jpg"
         num = 248
         #データセットからjpg画像を読み込み
@@ -184,10 +187,11 @@ if __name__ == '__main__':
         print("pre_shape : ", pre.shape)
         pre = pre[0]
         #実部,虚部を合体
-        pre_complex = np.empty((nx, ny), dtype= complex)
+        pre_complex = np.empty((nx, ny), dtype= float) #complex
         for i in range(nx):
             for j in range(ny):
-                pre_complex[i,j] = complex(pre[i,j,0], pre[i,j,1])
+                # pre_complex[i,j] = complex(pre[i,j,0], pre[i,j,1])
+                pre_complex[i,j] = 128*math.atan2(pre[i,j,1], pre[i,j,0])/math.pi + 128
         print(pre_complex)
         print("pre_shape : ", pre_complex.shape)
         #画像を保存
@@ -197,7 +201,80 @@ if __name__ == '__main__':
             print("L")
         pil_img.save(modelDirectory+"/img_sun/predict/pre_"+model_name+str(num)+ext)
 
-    elif training == 2: #入力画像(npy)から予測画像(bmp)を生成しようとした、未完成
+
+    elif training == 2: #入力画像(jpg)から複素数予測画像を出力し再生計算(jpg)
+        ext = ".jpg"
+        num = 248
+        #データセットからjpg画像を読み込み
+        x_test = np.array(Image.open(path_train+"/rgb_resize/rgb"+str(num).zfill(4)+ext).resize((nx, ny)).convert('L')) #Imageで開いた後配列に変換(mode：L)
+        print("x_shape : ", x_test.shape)
+        x_test = x_test[np.newaxis, ...]
+        x_test = x_test.reshape(1,nx,ny,1)
+        print("x_shape : ", x_test.shape)
+        #モデルを読み込み
+        fname_weight = modelDirectory + "/model_sun/model_" + model_name + ".hdf5"
+        net.load_weights(fname_weight)
+        #予測
+        pre = net.predict(x_test, verbose=0)
+        print("pre_shape : ", pre.shape)
+        pre = pre[0]
+        pre_complex = np.empty((nx, ny), dtype= complex)
+        for i in range(nx):
+            for j in range(ny):
+                pre_complex[i,j] = complex(pre[i,j,0], pre[i,j,1])
+        pre_complex = pre_complex[np.newaxis, ...]
+        pre_complex = pre_complex.reshape(1,nx,ny,1)
+        print("pre_complex:", pre_complex.shape)
+        print("pre_complex:", pre_complex)
+        #再生計算
+        pre_complex = K.constant(pre_complex) #テンソルに変換
+        pre_complex = Lambda(ld.diff_layer,name="diffract_layer")(pre_complex)  #layer_diffract 再生計算
+        pre_complex = K.eval(pre_complex) #numpy配列に戻す
+        
+        print("pre_complex_shape : ", pre_complex.shape)
+        pre_complex = pre_complex[0]
+        pre_complex = pre_complex[:,:,0]
+        print("pre_complex_shape : ", pre_complex.shape)
+        #画像を保存
+        pil_img = Image.fromarray(pre_complex)
+        if pil_img.mode != 'RGB':
+            pil_img = pil_img.convert('RGB') #画像をRGBに変換
+            print("RGB")
+        pil_img.save(modelDirectory+"/img_sun/predict/rec_pre"+str(num)+ext)
+
+
+    elif training == 3: #正解画像を再生計算して保存(再生計算の確認)
+        ext = ".jpg"
+        num = 248
+        #データセットからjpg画像を読み込み
+        pre = util.load_dataset_complex(path_train+"hol/hol%04d"+".jpg.npy",(ny,nx), (num,num+1))
+        pre = pre[0]
+        pre_complex = np.empty((nx, ny), dtype= complex)
+        for i in range(nx):
+            for j in range(ny):
+                pre_complex[i,j] = complex(pre[i,j,0], pre[i,j,1])
+        pre_complex = pre_complex[np.newaxis, ...]
+        pre_complex = pre_complex.reshape(1,nx,ny,1)
+        print("pre_complex:", pre_complex.shape)
+        print("pre_complex:", pre_complex)
+        #再生計算
+        pre = K.constant(pre_complex, dtype= tf.complex64) #テンソルに変換
+        pre = Lambda(ld.diff_layer,name="diffract_layer")(pre)  #layer_diffract 再生計算
+        pre = K.eval(pre) #numpy配列に戻す
+        
+        print("pre_shape : ", pre.shape)
+        pre = pre[0]
+        pre = pre[:,:,0]
+        print("pre_shape : ", pre.shape)
+        #画像を保存
+        pil_img = Image.fromarray(pre)
+        if pil_img.mode != 'RGB':
+            pil_img = pil_img.convert('RGB') #画像をRGBに変換
+            print("RGB")
+        pil_img.save(modelDirectory+"/img_sun/predict/rec_pre"+str(num)+ext)
+
+
+    elif training == 4: #入力画像(npy)から予測画像(bmp)を生成しようとした、未完成
         ext = ".npy"
         num = 0
         #データセットからnpy画像を読み込み
@@ -220,38 +297,9 @@ if __name__ == '__main__':
         x_test = x_test[0]
         predict_path = "./img_sun/predict/pre.bmp"
         cv2.imwrite(predict_path, x_test)
-
-    elif training == 3: #予測画像を再生計算して保存
-        ext = ".jpg"
-        num = 0
-        #データセットからjpg画像を読み込み
-        x_test = np.array(Image.open(path_train+"/hol_fix"+str(num)+ext))
-        print("x_shape : ", x_test.shape)
-        x_test = x_test[np.newaxis, ...]
-        x_test = x_test.reshape(1,512,512,1)
-        print("x_shape : ", x_test.shape)
-        #モデルを読み込み
-        fname_weight = modelDirectory + "/model_" + model_name + ".hdf5"
-        net.load_weights(fname_weight)
-        #予測
-        pre = net.predict(x_test, verbose=0)
-        #再生計算
-        pre = K.constant(pre) #テンソルに変換
-        pre = Lambda(ld.diff_layer,name="diffract_layer")(pre)  #layer_diffract 再生計算
-        pre = K.eval(pre) #numpy配列に戻す
-        
-        print("pre_shape : ", pre.shape)
-        pre = pre[0]
-        pre = pre[:,:,0]
-        print("pre_shape : ", pre.shape)
-        #画像を保存
-        pil_img = Image.fromarray(pre)
-        if pil_img.mode != 'RGB':
-            pil_img = pil_img.convert('RGB') #画像をRGBに変換
-            print("RGB")
-        pil_img.save(modelDirectory+"/img_sun/predict/rec_pre"+str(num)+ext)
     
-    elif training == 4: #入力画像を再生計算して保存
+    
+    elif training == 5: #入力画像を再生計算して保存
         ext = ".jpg"
         num = 0
         #画像を読み込み
@@ -276,7 +324,7 @@ if __name__ == '__main__':
             print("L")
         pil_img.save(modelDirectory+"/img_sun/rex_x_test"+str(num)+ext)
 
-    elif training == 5: #実験
+    elif training == 6: #実験
         x_test = Image.open(path_train+"/hol_fix0.jpg")
         x_test = Image.open(modelDirectory+"/img_sun/predict/pre0.jpg")
         print("type",type(x_test))

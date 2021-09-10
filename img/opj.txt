@@ -1,0 +1,17 @@
+batch_size = 10
+epochs = 10
+nx, ny = 128, 128
+lr=1e-4  #lerning rate
+adam
+train:(0,140)
+valid:(140,150)
+
+U-Net
+loss_unet_opj.png
+学習時間： 5.456475257873535 秒
+loss: 0.0030 - accuracy: 3.6621e-05 - val_loss: 0.0027 - val_accuracy: 3.6621e-05
+
+ResNet
+loss_ResNet_opj.png
+学習時間： 37.22340750694275 秒
+loss: 0.0028 - accuracy: 3.6621e-05 - val_loss: 0.0024 - val_accuracy: 3.6621e-05

@@ -31,6 +31,7 @@ import numpy as np
 # 再生計算用
 from keras.layers import Lambda
 import layer_diffract as ld
+import time
 
 # 損失の履歴をプロット
 def plot_loss(history, model_name):
@@ -52,6 +53,7 @@ def plot_loss(history, model_name):
     plt.grid()
     plt.xlabel('epoch')
     plt.ylabel('loss')
+    # plt.ylim(0, 0.02)
     plt.savefig("./img/loss_"+model_name+".png") #plt.savefig("./img/graph.eps",dpi=600)
     plt.show()
 
@@ -129,9 +131,9 @@ if __name__ == '__main__':
         y_val = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (140,150))
         print("y_shae : ", y_val.shape)
         # テストデータの読み込み(予測用)
-        x_test = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (157,158)) #(506,507)
+        x_test = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (167,168)) #(506,507)
         print("x_shae : ", x_test.shape)
-        y_test = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (157,158))
+        y_test = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (167,168))
 
         x_train = x_train.astype('float32')
         y_train = y_train.astype('float32')
@@ -149,7 +151,9 @@ if __name__ == '__main__':
                                         patience=10, min_lr=lr*0.001, verbose=1)
 
         # 学習
+        start = time.time()
         history = net.fit(x=x_train, y=y_train, batch_size=batch_size, epochs=epochs, verbose=True, validation_data=(x_val, y_val) ,callbacks=[reduce_lr, cp_cb, csv_logger])
+        print("学習時間：", time.time() -start, "秒")
         # 予測
         pre = net.predict(x_test, verbose=0)
         print("pre shape : ", pre.shape)

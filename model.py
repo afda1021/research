@@ -221,6 +221,28 @@ def ResNet2(img_rows, img_cols, img_channels, x_train):
     model=Model(inputs=input,outputs=[x])
     return model
 
+
+# ResNet2のモデルを返す(複素数画像) ホログラムで学習
+def ResNet2_complex(img_rows, img_cols, img_channels, x_train):
+    input=Input(shape=(img_rows,img_cols,img_channels))
+    x=Conv2D(32,(7,7), padding="same", input_shape=x_train.shape[1:],activation="relu")(input)
+	# x=MaxPooling2D(pool_size=(2,2))(x)
+    
+    x=rescell2(x,64,(3,3))
+    x=rescell2(x,64,(3,3))
+    x=rescell2(x,64,(3,3))
+    
+    x=rescell2(x,128,(3,3))
+    x=rescell2(x,128,(3,3))
+    x=rescell2(x,128,(3,3))
+
+    # x=rescell(x,1,(3,3))
+    # x = Add()([x, input])
+    x=Conv2D(2,(3,3), padding="same", input_shape=x.shape[1:],activation="linear")(x) #reluよりlinearの方がよかった
+    
+    model=Model(inputs=input,outputs=[x])
+    return model
+
 # (512,512,1) → (512,512,1)
 def cnn(img_rows, img_cols, img_channels, x_train):
     input = Input(shape=(img_rows,img_cols,img_channels))
