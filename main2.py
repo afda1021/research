@@ -204,7 +204,7 @@ if __name__ == '__main__':
 
     elif training == 2: #入力画像(jpg)から複素数予測画像を出力し再生計算(jpg)
         ext = ".jpg"
-        num = 248
+        num = 1449 #248
         #データセットからjpg画像を読み込み
         x_test = np.array(Image.open(path_train+"/rgb_resize/rgb"+str(num).zfill(4)+ext).resize((nx, ny)).convert('L')) #Imageで開いた後配列に変換(mode：L)
         print("x_shape : ", x_test.shape)
@@ -227,25 +227,34 @@ if __name__ == '__main__':
         print("pre_complex:", pre_complex.shape)
         print("pre_complex:", pre_complex)
         #再生計算
-        pre_complex = K.constant(pre_complex) #テンソルに変換
-        pre_complex = Lambda(ld.diff_layer,name="diffract_layer")(pre_complex)  #layer_diffract 再生計算
-        pre_complex = K.eval(pre_complex) #numpy配列に戻す
-        
-        print("pre_complex_shape : ", pre_complex.shape)
-        pre_complex = pre_complex[0]
-        pre_complex = pre_complex[:,:,0]
-        print("pre_complex_shape : ", pre_complex.shape)
-        #画像を保存
-        pil_img = Image.fromarray(pre_complex)
-        if pil_img.mode != 'RGB':
-            pil_img = pil_img.convert('RGB') #画像をRGBに変換
-            print("RGB")
-        pil_img.save(modelDirectory+"/img_sun/predict/rec_pre"+str(num)+ext)
+        i = 1
+        z = -0.03
+        while z >= -0.06: # 再生像の距離
+            pre = K.constant(pre_complex, dtype= tf.complex64) #テンソルに変換
+            pre = Lambda(ld.diff_layer,name="diffract_layer")([pre, K.constant(z)]) #layer_diffract 再生計算
+            pre = K.eval(pre) #numpy配列に戻す
+            pre = ld.normalize(pre, nx, ny)
+            # pre = ld.diff_layer2(pre_complex, nx, ny)
+            
+            print("pre_shape : ", pre.shape)
+            pre = pre[0]
+            pre = pre[:,:,0]
+            print("pre_shape : ", pre.shape)
+            print("pre : ", pre)
+            #画像を保存
+            pil_img = Image.fromarray(pre)
+            if pil_img.mode != 'RGB':
+                pil_img = pil_img.convert('RGB') #画像をRGBに変換
+                print("RGB")
+            pil_img.save(modelDirectory+"/img_sun/predict/rec_pre_"+model_name+str(num)+"_z"+str(i)+ext)
+            # 距離更新
+            i += 1
+            z -= 0.002
 
 
     elif training == 3: #正解画像を再生計算して保存(再生計算の確認)
         ext = ".jpg"
-        num = 248
+        num = 1449 #248
         #データセットからjpg画像を読み込み
         pre = util.load_dataset_complex(path_train+"hol/hol%04d"+".jpg.npy",(ny,nx), (num,num+1))
         pre = pre[0]
@@ -258,20 +267,29 @@ if __name__ == '__main__':
         print("pre_complex:", pre_complex.shape)
         print("pre_complex:", pre_complex)
         #再生計算
-        pre = K.constant(pre_complex, dtype= tf.complex64) #テンソルに変換
-        pre = Lambda(ld.diff_layer,name="diffract_layer")(pre)  #layer_diffract 再生計算
-        pre = K.eval(pre) #numpy配列に戻す
-        
-        print("pre_shape : ", pre.shape)
-        pre = pre[0]
-        pre = pre[:,:,0]
-        print("pre_shape : ", pre.shape)
-        #画像を保存
-        pil_img = Image.fromarray(pre)
-        if pil_img.mode != 'RGB':
-            pil_img = pil_img.convert('RGB') #画像をRGBに変換
-            print("RGB")
-        pil_img.save(modelDirectory+"/img_sun/predict/rec_pre"+str(num)+ext)
+        i = 1
+        z = -0.01
+        while z >= -0.06: # 再生像の距離
+            pre = K.constant(pre_complex, dtype= tf.complex64) #テンソルに変換
+            pre = Lambda(ld.diff_layer,name="diffract_layer")([pre, K.constant(z)]) #layer_diffract 再生計算
+            pre = K.eval(pre) #numpy配列に戻す
+            pre = ld.normalize(pre, nx, ny)
+            # pre = ld.diff_layer2(pre_complex, nx, ny)
+            
+            print("pre_shape : ", pre.shape)
+            pre = pre[0]
+            pre = pre[:,:,0]
+            print("pre_shape : ", pre.shape)
+            print("pre : ", pre)
+            #画像を保存
+            pil_img = Image.fromarray(pre)
+            if pil_img.mode != 'RGB':
+                pil_img = pil_img.convert('RGB') #画像をRGBに変換
+                print("RGB")
+            pil_img.save(modelDirectory+"/img_sun/predict/rec_correct"+str(num)+"_z"+str(i)+ext)
+            # 距離更新
+            i += 1
+            z -= 0.002
 
 
     elif training == 4: #入力画像(npy)から予測画像(bmp)を生成しようとした、未完成

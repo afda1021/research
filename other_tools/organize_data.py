@@ -193,9 +193,30 @@ def comfirm_complex_npy_plot2(path):
     
     print(y_npy[239, 172])
 
+# Lambda
+def Lambda_confirm():
+    from keras.layers import Lambda
+    import keras.backend as K
+    # import numpy as np
+    import tensorflow as tf
+
+    def _multiply(args, y=2):
+        x1 = args[0]
+        x2 = args[1]
+        return x1 * x2
+
+    # x1=tf.convert_to_tensor([0,0,1])
+    # x2=tf.convert_to_tensor([0,2,2])
+    x1 = K.constant([0,0,1], dtype= tf.complex64)
+    x2 = K.constant(2, dtype= tf.complex64)
+    multiply = Lambda(_multiply)([x1, x2])
+
+    print(multiply)
+
+
 if __name__ == '__main__':
     path = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/"
-    mode = 6 #0：rgb,d画像のファイル移動,ファイル名変更、1：rgb画像のjpgからnpyを生成、2：rgb画像のjpgをリサイズ、3：jpgを確認
+    mode = 7 #0：rgb,d画像のファイル移動,ファイル名変更、1：rgb画像のjpgからnpyを生成、2：rgb画像のjpgをリサイズ、3：jpgを確認
 
     if mode == 0:
         remove_rename(path)
@@ -211,3 +232,5 @@ if __name__ == '__main__':
         comfirm_complex_npy_plot(path)
     elif mode == 6:
         comfirm_complex_tan(path)
+    elif mode == 7:
+        Lambda_confirm()

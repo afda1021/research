@@ -122,6 +122,7 @@ if __name__ == '__main__':
         ext = ".npy"
         # 訓練データの読み込み
         x_train = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (0,140)) #(0,496)
+        print(x_train[0])
         print("x_shae : ", x_train.shape)  # (枚数,x,y,1)
         y_train = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (0,140))
         print("y_shae : ", y_train.shape)

@@ -183,8 +183,8 @@ def ResNet(img_rows, img_cols, img_channels, x_train):
 
 	x=AveragePooling2D(pool_size=(int(x.shape[1]),int(x.shape[2])),strides=(2,2))(x)
 
-	x=Flatten()(x)
-	x=Dense(units=10,kernel_initializer="he_normal",activation="softmax")(x)
+	x=Flatten()(x) # 次元削除
+	x=Dense(units=10,kernel_initializer="he_normal",activation="softmax")(x) # 全結合層
 	model=Model(inputs=input,outputs=[x])
 	return model
 
