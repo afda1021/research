@@ -203,16 +203,16 @@ def rescell2(data, filters, kernel_size):
 # (512,512,1) → (512,512,1)
 def ResNet2(img_rows, img_cols, img_channels, x_train):
     input=Input(shape=(img_rows,img_cols,img_channels))
-    x=Conv2D(32,(7,7), padding="same", input_shape=x_train.shape[1:],activation="relu")(input)
+    x=Conv2D(16,(7,7), padding="same", input_shape=x_train.shape[1:],activation="relu")(input)
 	# x=MaxPooling2D(pool_size=(2,2))(x)
     
-    x=rescell2(x,64,(3,3))
-    x=rescell2(x,64,(3,3))
-    x=rescell2(x,64,(3,3))
+    x=rescell2(x,32,(3,3))
+    x=rescell2(x,32,(3,3))
+    x=rescell2(x,32,(3,3))
     
-    x=rescell2(x,128,(3,3))
-    x=rescell2(x,128,(3,3))
-    x=rescell2(x,128,(3,3))
+    # x=rescell2(x,128,(3,3))
+    # x=rescell2(x,128,(3,3))
+    # x=rescell2(x,128,(3,3))
 
     # x=rescell(x,1,(3,3))
     # x = Add()([x, input])

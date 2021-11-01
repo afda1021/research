@@ -11,7 +11,17 @@ loss_unet_opj.png
 学習時間： 5.456475257873535 秒
 loss: 0.0030 - accuracy: 3.6621e-05 - val_loss: 0.0027 - val_accuracy: 3.6621e-05
 
+loss_unet.png
+学習時間： 175.62秒
+loss: 0.0039 - accuracy: 3.5604e-05 - val_loss: 0.0036 - val_accuracy: 3.5350e-05
+
+
 ResNet
 loss_ResNet_opj.png
 学習時間： 37.22340750694275 秒
 loss: 0.0028 - accuracy: 3.6621e-05 - val_loss: 0.0024 - val_accuracy: 3.6621e-05
+
+loss_ResNet.png
+学習時間： 403.57354402542114 秒
+loss: 0.0040 - accuracy: 3.5604e-05 - val_loss: 0.0037 - val_accuracy: 3.5350e-05
+

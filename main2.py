@@ -122,9 +122,9 @@ if __name__ == '__main__':
         ext = ".npy"
         # 訓練データの読み込み
         x_train = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1,601)) #(0,496)
-        print("x_train : ", x_train.shape)  # (枚数,x,y,1)
+        print("x_train : ", x_train.shape)  # rgb画像(枚数,x,y,1)
         y_train = util.load_dataset_complex(path_train+"hol/hol%04d.jpg"+ext,(ny,nx), (1,601))
-        print("y_train : ", y_train.shape)
+        print("y_train : ", y_train.shape)  # hol画像(枚数,x,y,2)
         # 評価データの読み込み
         x_val = util.load_dataset2(path_train+"rgb_resize/rgb%04d"+ext, input_shape,(ny,nx), (1201,1448)) #(496,506)
         print("x_val : ", x_val.shape)
@@ -174,17 +174,17 @@ if __name__ == '__main__':
         num = 248
         #データセットからjpg画像を読み込み
         x_test = np.array(Image.open(path_train+"/rgb_resize/rgb"+str(num).zfill(4)+ext).resize((nx, ny)).convert('L')) #Imageで開いた後配列に変換(mode：L)
-        print("x_shape : ", x_test.shape)
+        print("x_shape : ", x_test.shape) # rgb画像(x,y)
         x_test = x_test[np.newaxis, ...]
         x_test = x_test.reshape(1,nx,ny,1)
-        print("x_shape : ", x_test.shape)
+        print("x_shape : ", x_test.shape) # rgb画像(1,x,y,1)
         #モデルを読み込み
         fname_weight = modelDirectory + "/model_sun/model_" + model_name + ".hdf5"
         #fname_weight = modelDirectory + "/model.hdf5"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)
-        print("pre_shape : ", pre.shape)
+        print("pre_shape : ", pre.shape) # hol画像(1,x,y,2)
         pre = pre[0]
         #実部,虚部を合体
         pre_complex = np.empty((nx, ny), dtype= float) #complex
@@ -193,7 +193,7 @@ if __name__ == '__main__':
                 # pre_complex[i,j] = complex(pre[i,j,0], pre[i,j,1])
                 pre_complex[i,j] = 128*math.atan2(pre[i,j,1], pre[i,j,0])/math.pi + 128
         print(pre_complex)
-        print("pre_shape : ", pre_complex.shape)
+        print("pre_shape : ", pre_complex.shape) # hol画像(x,y)
         #画像を保存
         pil_img = Image.fromarray(pre_complex)
         if pil_img.mode != 'L': # #L：8ビットピクセル画像。黒と白  RGB
@@ -207,16 +207,16 @@ if __name__ == '__main__':
         num = 1449 #248
         #データセットからjpg画像を読み込み
         x_test = np.array(Image.open(path_train+"/rgb_resize/rgb"+str(num).zfill(4)+ext).resize((nx, ny)).convert('L')) #Imageで開いた後配列に変換(mode：L)
-        print("x_shape : ", x_test.shape)
+        print("x_shape : ", x_test.shape) # rgb画像(x,y)
         x_test = x_test[np.newaxis, ...]
         x_test = x_test.reshape(1,nx,ny,1)
-        print("x_shape : ", x_test.shape)
+        print("x_shape : ", x_test.shape) # rgb画像(1,x,y,1)
         #モデルを読み込み
         fname_weight = modelDirectory + "/model_sun/model_" + model_name + ".hdf5"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)
-        print("pre_shape : ", pre.shape)
+        print("pre_shape : ", pre.shape) # hol画像(1,x,y,2)
         pre = pre[0]
         pre_complex = np.empty((nx, ny), dtype= complex)
         for i in range(nx):
@@ -224,7 +224,7 @@ if __name__ == '__main__':
                 pre_complex[i,j] = complex(pre[i,j,0], pre[i,j,1])
         pre_complex = pre_complex[np.newaxis, ...]
         pre_complex = pre_complex.reshape(1,nx,ny,1)
-        print("pre_complex:", pre_complex.shape)
+        print("pre_complex:", pre_complex.shape) # hol画像(1,x,y,1)
         print("pre_complex:", pre_complex)
         #再生計算
         i = 1
@@ -236,10 +236,10 @@ if __name__ == '__main__':
             pre = ld.normalize(pre, nx, ny)
             # pre = ld.diff_layer2(pre_complex, nx, ny)
             
-            print("pre_shape : ", pre.shape)
+            print("pre_shape : ", pre.shape) # 再生画像(1,x,y,1)
             pre = pre[0]
             pre = pre[:,:,0]
-            print("pre_shape : ", pre.shape)
+            print("pre_shape : ", pre.shape) # 再生画像(x,y)
             print("pre : ", pre)
             #画像を保存
             pil_img = Image.fromarray(pre)
@@ -264,8 +264,8 @@ if __name__ == '__main__':
                 pre_complex[i,j] = complex(pre[i,j,0], pre[i,j,1])
         pre_complex = pre_complex[np.newaxis, ...]
         pre_complex = pre_complex.reshape(1,nx,ny,1)
-        print("pre_complex:", pre_complex.shape)
-        print("pre_complex:", pre_complex)
+        print("pre_complex:", pre_complex.shape) # hol画像(1,x,y,1)
+        print("pre_complex:", pre_complex) # a+bj
         #再生計算
         i = 1
         z = -0.01
@@ -276,10 +276,10 @@ if __name__ == '__main__':
             pre = ld.normalize(pre, nx, ny)
             # pre = ld.diff_layer2(pre_complex, nx, ny)
             
-            print("pre_shape : ", pre.shape)
+            print("pre_shape : ", pre.shape) # 再生画像(1,x,y,1)
             pre = pre[0]
             pre = pre[:,:,0]
-            print("pre_shape : ", pre.shape)
+            print("pre_shape : ", pre.shape) # 再生画像(x,y)
             print("pre : ", pre)
             #画像を保存
             pil_img = Image.fromarray(pre)

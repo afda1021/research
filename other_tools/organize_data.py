@@ -3,10 +3,274 @@ import shutil
 import numpy as np
 # from PIL import Image
 import glob
-from keras.preprocessing.image import load_img,img_to_array
+# from keras.preprocessing.image import load_img,img_to_array
 from PIL import Image
 # import os
 import math
+
+
+# jpgを再生計算(課題3参照)
+def recurrent_calculation(input_file, path):
+    import cmath
+    ## inputホログラム画像の読み込み
+    in1 = np.array(Image.open(path+"img/predict/"+input_file).convert('L')) #Imageで開いた後配列に変換(mode：L)
+
+    in1 = in1 - np.average(in1) #平均値引いてる(npyのrealは-1～1だから？)
+
+    NX = in1.shape[1]*2 #640*2 #1024
+    NY = in1.shape[0]*2 #360*2 #1024
+    lam = 633e-9 #pow(10, -9) #520 * pow(10, -9)
+    delta_x = 1 * 10e-6 #pow(10, -6)
+    delta_y = 1 * 10e-6 #pow(10, -6)
+    delta_u = 1 / (delta_x * NX)
+    delta_v = 1 / (delta_y * NY)
+    # z = 0.5 #0.5, cube:1.0？, hol:0.1554
+    H = np.zeros((NY,NX), dtype=np.complex) #2次元複素配列を0で初期化
+    H_norm = np.zeros((NY,NX))
+    g1 = np.zeros((NY,NX))
+    G2 = np.zeros((NY,NX), dtype=np.complex) #2次元複素配列を0で初期化
+    A_G2 = np.zeros((NY,NX))
+    g2 = np.zeros((NY,NX))
+    g2_norm = np.zeros((NY,NX))
+    img_out = np.zeros((int(NY/2),int(NX/2)))
+
+    ## inputホログラム画像のゼロパディング
+    for ay in range(0, int(NY/2)):
+        for ax in range(0, int(NX/2)):
+            g1[int(NY/4)+ay][int(NX/4)+ax] = in1[ay][ax]
+    # #画像を保存
+    # pil_img = Image.fromarray(g1)
+    # if pil_img.mode != 'RGB':
+    #     pil_img = pil_img.convert('RGB') #画像をRGBに変換
+    #     print("RGB")
+    # pil_img.save(path+"test/A_g1.png")
+
+    z = 0.2
+    while z < 0.3:
+        ## Hの計算
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                w = math.sqrt(1.0 / lam / lam - (delta_u * (-NX / 2 + ax))**2 - (delta_v * (-NY / 2 + ay))**2)
+                H[ay][ax] = cmath.exp(2j * math.pi * w * z)
+
+        # h実部のmax, minを求める
+        h_min = H[0][0].real
+        h_max = H[0][0].real
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                if h_min > H[ay][ax].real:
+                    h_min = H[ay][ax].real
+                if h_max < H[ay][ax].real:
+                    h_max = H[ay][ax].real
+
+        # おそらくシフト演算
+        for ax in range(0, NX):
+            for ay in range(0, int(NY/2)):
+                if ax < NX / 2: #ay=0~511
+                    temp = H[ay][ax]
+                    H[ay][ax] = H[int(ay + NY / 2)][int(ax + NX / 2)] #ay+NY/2=512~
+                    H[int(ay + NY / 2)][int(ax + NX / 2)] = temp
+                else:
+                    temp = H[ay][ax]
+                    H[ay][ax] = H[int(ay + NY / 2)][int(ax - NX / 2)]
+                    H[int(ay + NY / 2)][int(ax - NX / 2)] = temp
+        
+        # # img_outはhの実部を0～255に正規化したもの
+        # for ay in range(0, NY):
+        #     for ax in range(0, NX):
+        #         H_norm[ay][ax] = (255 * (H[ay][ax].real - h_min)) / (h_max - h_min)
+
+        # #画像を保存
+        # pil_img = Image.fromarray(H_norm)
+        # if pil_img.mode != 'RGB':
+        #     pil_img = pil_img.convert('RGB') #画像をRGBに変換
+        #     print("RGB")
+        # pil_img.save(path+"test/H_real.jpg")
+
+        ## FFT
+        G1 = np.fft.fft2(g1) # 高速フーリエ変換(FFT)
+        # G1 = np.fft.fftshift(G1)
+        # print(G1)
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                G2[ay][ax] = H[ay][ax] * G1[ay][ax] # 全て複素数
+        # print(G2)
+        # #画像を保存
+        # for ay in range(0, NY):
+        #     for ax in range(0, NX):
+        #         A_G2[ay][ax] = math.sqrt((G2[ay][ax].real)**2 + (G2[ay][ax].imag)**2)
+        # pil_img = Image.fromarray(A_G2)
+        # if pil_img.mode != 'RGB':
+        #     pil_img = pil_img.convert('RGB') #画像をRGBに変換
+        #     print("RGB")
+        # pil_img.save(path+"test/A_Gg2.png")
+        
+        # G2 = np.fft.fftshift(G2)
+        # print("g1:", g1.shape, "G1:", G1.shape, "H:", H.shape, "G2:", G2.shape)
+        # print("G2", G2)
+        out2 = np.fft.ifft2(G2) #irfftはやべぇ！！
+
+        # print(out2.shape)
+        # print("out2", out2)
+        # 逆fftしたout2の振幅をg2に格納
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                g2[ay][ax] = math.sqrt((out2[ay][ax].real)**2 + (out2[ay][ax].imag)**2)
+        # pil_img = Image.fromarray(g2)
+        # if pil_img.mode != 'RGB':
+        #     pil_img = pil_img.convert('RGB') #画像をRGBに変換
+        #     print("RGB")
+        # pil_img.save(path+"test/A_g2-1.png")
+
+        # g2のmax, minを求める
+        g2_min = g2[0][0]
+        g2_max = g2[0][0]
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                if g2_min > g2[ay][ax]:
+                    g2_min = g2[ay][ax]
+                if g2_max < g2[ay][ax]:
+                    g2_max = g2[ay][ax]
+        
+        # g2を0～255に正規化し、img_outに格納
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                g2_norm[ay][ax] = 255 * ((g2[ay][ax] - g2_min) / (g2_max - g2_min))
+        # #画像を保存
+        # pil_img = Image.fromarray(g2_norm)
+        # if pil_img.mode != 'RGB':
+        #     pil_img = pil_img.convert('RGB') #画像をRGBに変換
+        #     print("RGB")
+        # pil_img.save(path+"test/A_g2_norm.png")
+        
+        for ay in range(0, int(NY/2)):
+            for ax in range(0, int(NX/2)):        
+                img_out[ay][ax] = g2_norm[int(NY/4)+ay][int(NX/4)+ax]
+
+        #画像を保存
+        pil_img = Image.fromarray(img_out)
+        if pil_img.mode != 'RGB':
+            pil_img = pil_img.convert('RGB') #画像をRGBに変換
+            print("RGB")
+        pil_img.save(path+"img/predict/rec_"+input_file.split('.')[0]+"_jpg"+".png") #A_g2
+        z += 0.1
+
+# npyを再生計算(課題3参照)
+def recurrent_calculation_npy(input_file, path):
+    import cmath
+    ## inputホログラム画像の読み込み
+    # in1 = np.array(Image.open(path+"img/predict/"+input_file).convert('L')) #Imageで開いた後配列に変換(mode：L)
+    in1 = np.load(path+"img/predict/"+input_file)
+
+    # in1 = in1 - np.average(in1) #平均値引いてる
+
+    NX = in1.shape[1]*2 #640*2 #1024
+    NY = in1.shape[0]*2 #360*2 #1024
+    lam = 633e-9 #pow(10, -9) #520 * pow(10, -9)
+    delta_x = 1 * 10e-6 #pow(10, -6)
+    delta_y = 1 * 10e-6 #pow(10, -6)
+    delta_u = 1 / (delta_x * NX)
+    delta_v = 1 / (delta_y * NY)
+    # z = 0.5 #0.5, cube:1.0？, hol:0.1554
+    H = np.zeros((NY,NX), dtype=np.complex) #2次元複素配列を0で初期化
+    H_norm = np.zeros((NY,NX))
+    g1 = np.zeros((NY,NX))
+    G2 = np.zeros((NY,NX), dtype=np.complex) #2次元複素配列を0で初期化
+    A_G2 = np.zeros((NY,NX))
+    g2 = np.zeros((NY,NX))
+    g2_norm = np.zeros((NY,NX))
+    img_out = np.zeros((int(NY/2),int(NX/2)))
+
+    ## inputホログラム画像のゼロパディング
+    for ay in range(0, int(NY/2)):
+        for ax in range(0, int(NX/2)):
+            g1[int(NY/4)+ay][int(NX/4)+ax] = in1[ay][ax]
+
+    z = 0.2
+    while z < 0.3:
+        ## Hの計算
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                w = math.sqrt(1.0 / lam / lam - (delta_u * (-NX / 2 + ax))**2 - (delta_v * (-NY / 2 + ay))**2)
+                H[ay][ax] = cmath.exp(2j * math.pi * w * z)
+
+        # h実部のmax, minを求める
+        h_min = H[0][0].real
+        h_max = H[0][0].real
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                if h_min > H[ay][ax].real:
+                    h_min = H[ay][ax].real
+                if h_max < H[ay][ax].real:
+                    h_max = H[ay][ax].real
+
+        # おそらくシフト演算
+        for ax in range(0, NX):
+            for ay in range(0, int(NY/2)):
+                if ax < NX / 2: #ay=0~511
+                    temp = H[ay][ax]
+                    H[ay][ax] = H[int(ay + NY / 2)][int(ax + NX / 2)] #ay+NY/2=512~
+                    H[int(ay + NY / 2)][int(ax + NX / 2)] = temp
+                else:
+                    temp = H[ay][ax]
+                    H[ay][ax] = H[int(ay + NY / 2)][int(ax - NX / 2)]
+                    H[int(ay + NY / 2)][int(ax - NX / 2)] = temp
+
+        ## FFT
+        G1 = np.fft.fft2(g1) # 高速フーリエ変換(FFT)
+        # G1 = np.fft.fftshift(G1)
+        # print(G1)
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                G2[ay][ax] = H[ay][ax] * G1[ay][ax] # 全て複素数
+        out2 = np.fft.ifft2(G2) #irfftはやべぇ！！
+
+        # 逆fftしたout2の振幅をg2に格納
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                g2[ay][ax] = math.sqrt((out2[ay][ax].real)**2 + (out2[ay][ax].imag)**2)
+
+        # g2のmax, minを求める
+        g2_min = g2[0][0]
+        g2_max = g2[0][0]
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                if g2_min > g2[ay][ax]:
+                    g2_min = g2[ay][ax]
+                if g2_max < g2[ay][ax]:
+                    g2_max = g2[ay][ax]
+        
+        # g2を0～255に正規化し、img_outに格納
+        for ay in range(0, NY):
+            for ax in range(0, NX):
+                g2_norm[ay][ax] = 255 * ((g2[ay][ax] - g2_min) / (g2_max - g2_min))
+        
+        for ay in range(0, int(NY/2)):
+            for ax in range(0, int(NX/2)):        
+                img_out[ay][ax] = g2_norm[int(NY/4)+ay][int(NX/4)+ax]
+
+        #画像を保存
+        pil_img = Image.fromarray(img_out)
+        if pil_img.mode != 'RGB':
+            pil_img = pil_img.convert('RGB') #画像をRGBに変換
+            print("RGB")
+        pil_img.save(path+"img/predict/rec_"+input_file.split('.')[0]+"_npy"+".png") #A_g2
+        z += 0.1
+
+def calc_ssim(path, imgs):
+    from skimage.metrics import structural_similarity # from skimage.measure import compare_ssim#, compare_psnr
+    from sklearn.metrics import mean_squared_error
+    import cv2
+    
+    img1 = cv2.imread(path + "img/predict/" + imgs[0], cv2.IMREAD_GRAYSCALE)
+    img2 = cv2.imread(path + "img/predict/" + imgs[1], cv2.IMREAD_GRAYSCALE)
+    # input_shape = (512, 512, 1)
+    # img1 = load_dataset2(path+"test/hol_float%d"+".jpg", input_shape,(512,512), (0,1))
+    # img2 = load_dataset2(path+"test/hol_fix%d"+".jpg", input_shape,(512,512), (0,1))
+    print(imgs[1])
+    print("ssim:", structural_similarity(img1, img2))
+    print("mse:", mean_squared_error(img1, img2))
+    print("mse:", np.average(np.square(img1-img2)))
 
 # rgb、d画像のファイルを移動しファイル名を変える
 def remove_rename(path):
@@ -155,6 +419,37 @@ def comfirm_complex_tan(path):
     plt.grid()
     plt.show()
 
+def comfirm_complex_real(path):
+    x, y = np.array([]), np.array([])
+    for num in range(2,4,1):
+        #データセットからjpg画像を読み込み
+        y_jpg = np.array(Image.open(path+"SUNRGBD2/hol/hol"+str(num).zfill(4)+".jpg")) #Imageで開いた後配列に変換(mode：L)
+        y_npy = np.load(path+"SUNRGBD2/hol/hol"+str(num).zfill(4)+".jpg.npy")
+        # print(y_jpg[0][0], y_npy[0][0].real)
+
+        max_real = 0
+        min_real = 0
+        for i in range(256):
+            for j in range(256):
+                if max_real < y_npy[0][0].real:
+                    max_real = y_npy[0][0].real
+                if min_real > y_npy[0][0].real:
+                    min_real = y_npy[0][0].real
+                # tan_npy = y_npy[i,j].imag / y_npy[i,j].real
+                # if abs(tan_jpg) < 25 and abs(tan_npy) < 1000: #外れ値は無視
+                #     x = np.append(x, tan_jpg)
+                #     y = np.append(y, tan_npy)
+                # else:
+                #     print(i, j)
+    print(max_real, min_real)
+
+    # import matplotlib.pyplot as plt
+    # plt.plot(x,y,marker=".",linestyle='None')
+    # plt.xlabel("tan_jpg")
+    # plt.ylabel("tan_npy")
+    # plt.grid()
+    # plt.show()
+
 # 複素数jpgの要素を確認
 def comfirm_complex_npy_plot2(path):
     num = 3
@@ -213,24 +508,144 @@ def Lambda_confirm():
 
     print(multiply)
 
+def renumber_img():
+    import cv2
+    import os
+    img_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
+    img_path2 = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_new/"
+    remove_index = []
+
+    # # ノイズファイルを除去
+    # for i in range(0,508):
+    #     file = glob.glob(img_path+"hol_fix"+str(i)+".jpg", recursive=False)
+    #     if len(file) == 0:
+    #         remove_index.append(i)
+
+    # for i in remove_index:
+    #     os.remove(img_path+"rec_float"+str(i)+".jpg")
+    #     os.remove(img_path+"rec_float"+str(i)+".npy")
+    #     print(i)
+
+    # 欠番がないように詰める
+    file_num = 0
+    removed_num = 0
+    for i in range(0,509):
+        file = glob.glob(img_path+"rec_float"+str(i)+".jpg", recursive=False)
+        if len(file) != 0:
+            shutil.copy(img_path+"rec_float"+str(i)+".jpg", img_path2+"rec_float"+str(file_num)+".jpg") #"C:/Users/y.inoue/Desktop/hol_fix"+str(i)+".jpg"
+            shutil.copy(img_path+"rec_float"+str(i)+".npy", img_path2+"rec_float"+str(file_num)+".npy")
+            file_num += 1
+        elif len(file) == 0:
+            print(i)
+            removed_num += 1
+    print(file_num, removed_num)
+
+# low holのnpyとjpgの対応 (npy：mag=0の複素数、jpg：実数)
+def comfirm_npy_jpg():
+    hol_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
+    num = 0
+    x, y = np.array([]), np.array([])
+
+    x_jpg = np.array(Image.open(hol_path+"hol_fix"+str(num)+".jpg")) #Imageで開いた後配列に変換(mode：L)
+    x_npy = np.load(hol_path+"hol_fix"+str(num)+".npy")
+
+    max_real = 0
+    min_real = 0
+    for i in range(512):
+        for j in range(512):
+            if max_real < x_npy[i][j].real:
+                max_real = x_npy[i][j].real
+            if min_real > x_npy[i][j].real:
+                min_real = x_npy[i][j].real
+    print(max_real, min_real)
+
+    for i in range(512):
+        for j in range(512):
+            norm_npy = (x_npy[i][j].real - min_real) / (max_real - min_real) * 255
+            x = np.append(x, x_npy[i][j].real)
+            y = np.append(y, norm_npy)
+        print(i)
+    # print(x_jpg[0])
+    # print(x_npy[0])
+    # print(x_jpg.shape, x_npy.shape)
+
+    import matplotlib.pyplot as plt
+    plt.plot(x,y,marker=".",linestyle='None')
+    plt.xlabel("npy")
+    plt.ylabel("jpg")
+    plt.grid()
+    plt.show()
+
+def create_dataset():
+    import random
+    in_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
+    out_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_random/"
+    num = 333
+    # ランダムな複数のholを足し合わせて新たなholを生成,保存
+    for i in range(160):
+        n1 = random.randrange(num)
+        n2 = random.randrange(num)
+        x1 = np.load(in_path+"hol_fix"+str(n1)+".npy")
+        x2 = np.load(in_path+"hol_fix"+str(n2)+".npy")
+        y1 = np.load(in_path+"hol_float"+str(n1)+".npy")
+        y2 = np.load(in_path+"hol_float"+str(n2)+".npy")
+        if i < 50: #2つを足し合わせる
+            np.save(out_path+"hol_fix"+str(i)+".npy", x1+x2) #i+num+1
+            np.save(out_path+"hol_float"+str(i)+".npy", y1+y2) #i+num+1
+            # print(n1, n2)
+        elif i < 160: #3つを足し合わせる
+            n3 = random.randrange(num)
+            x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
+            y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
+            np.save(out_path+"hol_fix"+str(i)+".npy", x1+x2+x3)
+            np.save(out_path+"hol_float"+str(i)+".npy", y1+y2+y3)
+            # print(n1, n2, n3)
+        
+
 
 if __name__ == '__main__':
     path = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/"
-    mode = 7 #0：rgb,d画像のファイル移動,ファイル名変更、1：rgb画像のjpgからnpyを生成、2：rgb画像のjpgをリサイズ、3：jpgを確認
+    pj_path = "C:/Users/y.inoue/Desktop/Laboratory/research/tensorflow2-horn-low-accuracy-git/"
+    # path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
+    mode = 14 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
 
     if mode == 0:
-        remove_rename(path)
+        input_file = "pre_ResNet0.jpg" #"cube140.bmp" #"pre_unet0.jpg" #rect.bmp img02.jpg hol_fix0.jpg pre_ResNet0
+        recurrent_calculation(input_file, pj_path)
+
     elif mode == 1:
-        generate_npy(path)
+        input_file = "pre_ResNet0.npy" # hol_fix0, hol_float0, pre_unet0, pre_ResNet0
+        recurrent_calculation_npy(input_file, pj_path)
+
     elif mode == 2:
-        resize_jpg(path)
+        # ホログラム
+        # imgs = ["hol_float0.jpg", "hol_fix0.jpg"]  # hol_fix0, pre_unet0, pre_ResNet0
+        # 再生像
+        imgs = ["rec_hol_float0_npy.png", "rec_hol_fix0_npy.png"]  # rec_hol_fix0_npy, rec_pre_unet0_npy, rec_pre_ResNet0_npy
+        calc_ssim(pj_path, imgs)
+
     elif mode == 3:
-        comfirm_complex_range(path)
+        remove_rename(path)
     elif mode == 4:
-        comfirm_complex_3D_plot(path)
+        generate_npy(path)
     elif mode == 5:
-        comfirm_complex_npy_plot(path)
+        resize_jpg(path)
     elif mode == 6:
-        comfirm_complex_tan(path)
+        comfirm_complex_range(path)
     elif mode == 7:
+        comfirm_complex_3D_plot(path)
+    elif mode == 8:
+        comfirm_complex_npy_plot(path)
+    elif mode == 9:
+        comfirm_complex_tan(path)
+    elif mode == 10:
+        comfirm_complex_real(path)
+    elif mode == 11:
         Lambda_confirm()
+    elif mode == 12:
+        renumber_img()
+    elif mode == 13:
+        comfirm_npy_jpg()
+
+    elif mode == 14: # ホログラムをランダムに足し合わせてデータセットを生成
+        create_dataset()
