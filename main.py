@@ -69,7 +69,7 @@ def plot_loss(history, model_name, epochs):
     plt.xlabel('epoch')
     plt.ylabel('loss')
     plt.xlim(0, epochs)
-    plt.ylim(0, 0.04)
+    # plt.ylim(0, 0.04)
     plt.savefig("./img/loss_"+model_name+".png") #plt.savefig("./img/graph.eps",dpi=600)
     plt.show()
 
@@ -104,8 +104,8 @@ def loss_mse_l1(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    training = 0 #0：学習、1：テスト(jpg→jpg)、2:テスト(npy→jpg)、3:テスト(npy→npy)、/ 4:テスト(再生像jpg)、5： テスト(bmp)？、6：テスト(jpg)？、7：再生計算？
-    model_type = 1 #0：U-Net、1：ResNet
+    training = 3 #0：学習、1：テスト(jpg→jpg)、2:テスト(npy→jpg)、3:テスト(npy→npy)、/ 4:テスト(再生像jpg)、5： テスト(bmp)？、6：テスト(jpg)？、7：再生計算？
+    model_type = 0 #0：U-Net、1：ResNet
 
     batch_size = 10
     epochs = 30
@@ -116,7 +116,7 @@ if __name__ == '__main__':
     d_nx, d_ny = 512, 512 #512, 512 / 128, 128
     input_shape = (d_ny, d_nx, 1)
 
-    path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/" # hol_horn_low_accuracy_16_4_21_small, hol_horn_low_accuracy_16_4_21_small_random
+    path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_random/" # hol_horn_low_accuracy_16_4_21_small, hol_horn_low_accuracy_16_4_21_small_random
     
     #loss_func = "mse"  #損失関数
     lr=1e-4  #lerning rate
@@ -179,7 +179,6 @@ if __name__ == '__main__':
         y_test = util.as_img(y_test,input_shape,(d_ny,d_nx))  # 正解画像
         pre = util.as_img(pre,input_shape,(d_ny,d_nx))  # 予測画像
         print(x_test.shape)
-        print("Hello")
 
         # 損失をプロット, 保存
         plot_loss(history, model_name, epochs)
@@ -252,7 +251,7 @@ if __name__ == '__main__':
         x_test = util.load_dataset2(path_train+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
         print("x_shape : ", x_test.shape) # (枚数,x,y,1), 実数
         #モデルを読み込み
-        fname_weight = modelDirectory + "/model/model_" + model_name + ".hdf5"
+        fname_weight = modelDirectory + "/model/model_" + model_name + "_2_4_divide_random" + ".hdf5" #"_opj2"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)

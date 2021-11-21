@@ -271,6 +271,8 @@ def calc_ssim(path, imgs):
     print("ssim:", structural_similarity(img1, img2))
     print("mse:", mean_squared_error(img1, img2))
     print("mse:", np.average(np.square(img1-img2)))
+    print(img1)
+    print(img2)
 
 # rgb、d画像のファイルを移動しファイル名を変える
 def remove_rename(path):
@@ -590,38 +592,49 @@ def create_dataset():
         y1 = np.load(in_path+"hol_float"+str(n1)+".npy")
         y2 = np.load(in_path+"hol_float"+str(n2)+".npy")
         if i < 50: #2つを足し合わせる
-            np.save(out_path+"hol_fix"+str(i)+".npy", x1+x2) #i+num+1
-            np.save(out_path+"hol_float"+str(i)+".npy", y1+y2) #i+num+1
+            np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2)/2) #i+num+1
+            np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2)/2) #i+num+1
             # print(n1, n2)
-        elif i < 160: #3つを足し合わせる
+        elif i < 100: #3つを足し合わせる
             n3 = random.randrange(num)
             x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
             y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
-            np.save(out_path+"hol_fix"+str(i)+".npy", x1+x2+x3)
-            np.save(out_path+"hol_float"+str(i)+".npy", y1+y2+y3)
+            np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3)/3)
+            np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3)/3)
+        elif i < 160: #4つを足し合わせる
+            n3 = random.randrange(num)
+            n4 = random.randrange(num)
+            x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
+            x4 = np.load(in_path+"hol_fix"+str(n4)+".npy")
+            y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
+            y4 = np.load(in_path+"hol_float"+str(n4)+".npy")
+            np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3+x4)/4)
+            np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3+y4)/4)
             # print(n1, n2, n3)
-        
+        # np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2)/2) #i+num+1
+        # np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2)/2) #i+num+1
 
 
 if __name__ == '__main__':
     path = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/"
     pj_path = "C:/Users/y.inoue/Desktop/Laboratory/research/tensorflow2-horn-low-accuracy-git/"
     # path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
-    mode = 14 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
+    mode = 2 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
 
     if mode == 0:
         input_file = "pre_ResNet0.jpg" #"cube140.bmp" #"pre_unet0.jpg" #rect.bmp img02.jpg hol_fix0.jpg pre_ResNet0
         recurrent_calculation(input_file, pj_path)
 
     elif mode == 1:
-        input_file = "pre_ResNet0.npy" # hol_fix0, hol_float0, pre_unet0, pre_ResNet0
+        input_file = "hol_float0_random.npy" # hol_fix0, hol_float0, pre_unet0, pre_ResNet0 / pre_unet0_opj2.npy, pre_unet0_2_4_divide_random.npy
         recurrent_calculation_npy(input_file, pj_path)
 
     elif mode == 2:
         # ホログラム
         # imgs = ["hol_float0.jpg", "hol_fix0.jpg"]  # hol_fix0, pre_unet0, pre_ResNet0
         # 再生像
-        imgs = ["rec_hol_float0_npy.png", "rec_hol_fix0_npy.png"]  # rec_hol_fix0_npy, rec_pre_unet0_npy, rec_pre_ResNet0_npy
+        # imgs = ["rec_hol_float0_npy.png", "rec_pre_unet0_2_4_divide_npy.png"]  # rec_hol_fix0_npy, rec_pre_unet0_npy, rec_pre_ResNet0_npy / rec_pre_unet0_opj2_npy.png, rec_pre_unet0_2_4_divide_npy.png
+        imgs = ["rec_hol_float0_random_npy.png", "rec_pre_unet0_2_4_divide_random_npy.png"]
         calc_ssim(pj_path, imgs)
 
     elif mode == 3:
