@@ -104,23 +104,33 @@ def loss_mse_l1(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    training = 3 #0：学習、1：テスト(jpg→jpg)、2:テスト(npy→jpg)、3:テスト(npy→npy)、/ 4:テスト(再生像jpg)、5： テスト(bmp)？、6：テスト(jpg)？、7：再生計算？
+    training = 0 #0：学習、1：テスト(jpg→jpg)、2:テスト(npy→jpg)、3:テスト(npy→npy)、/ 4:テスト(再生像jpg)、5： テスト(bmp)？、6：テスト(jpg)？、7：再生計算？
     model_type = 0 #0：U-Net、1：ResNet
+    dataset_type = 1 #0：オリジナル(_opj2, predict)、1：2_4 devideランダム(_2_4_divide_random, predict_random)
 
     batch_size = 10
     epochs = 30
 
-    modelDirectory = os.getcwd()  #カレントディレクトリを取得
+    currentDirectory = os.getcwd()  #カレントディレクトリを取得
 
     nx, ny = 512, 512 #512, 512 / 128, 128
     d_nx, d_ny = 512, 512 #512, 512 / 128, 128
     input_shape = (d_ny, d_nx, 1)
 
-    path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_random/" # hol_horn_low_accuracy_16_4_21_small, hol_horn_low_accuracy_16_4_21_small_random
+    path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/" # hol_horn_low_accuracy_16_4_21_small, hol_horn_low_accuracy_16_4_21_small, object_calc/test_create_image
     
     #loss_func = "mse"  #損失関数
     lr=1e-4  #lerning rate
     adam = optimizers.Adam(lr=lr)
+    
+    if dataset_type == 0:
+        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/" #object_calc/test_create_image
+        dataset_name = "_opj2"
+        pre_dir = "/predict"
+    elif dataset_type == 1:
+        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_random/"
+        dataset_name = "_2_4_divide_random"
+        pre_dir = "/predict_random"
 
     if model_type == 0:
         net = model.unet2(input_shape)  #U-Netのモデル
@@ -194,7 +204,7 @@ if __name__ == '__main__':
         x_test = x_test.reshape(1,nx,ny,1)
         print("x_shape : ", x_test.shape)
         #モデルを読み込み
-        fname_weight = modelDirectory + "/model/model_" + model_name + ".hdf5"
+        fname_weight = currentDirectory + "/model/model_" + model_name + dataset_name + ".hdf5"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)
@@ -207,15 +217,16 @@ if __name__ == '__main__':
         if pil_img.mode != 'L': # #L：8ビットピクセル画像。黒と白  RGB
             pil_img = pil_img.convert('L') #画像をLに変換  RGB
             print("L")
-        pil_img.save(modelDirectory+"/img/predict/pre_"+model_name+str(num)+".jpg")
+        pil_img.save(currentDirectory+"/img"+pre_dir+"/pre_"+model_name+str(num)+".jpg")
     
     elif training == 2: #入力画像(npy)から予測画像(jpg)を生成し保存
         num = 0 #247
         #データセットからnpy画像を読み込み
-        x_test = util.load_dataset2(path_train+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
+        # x_test = util.load_dataset2(path_train+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
+        x_test = util.load_dataset2(currentDirectory+"/img"+pre_dir+"/"+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
         print("x_shape : ", x_test.shape) # (枚数,x,y,1), 実数
         #モデルを読み込み
-        fname_weight = modelDirectory + "/model/model_" + model_name + ".hdf5"
+        fname_weight = currentDirectory + "/model/model_" + model_name + dataset_name + ".hdf5"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)
@@ -243,15 +254,16 @@ if __name__ == '__main__':
         if pil_img.mode != 'L': # #L：8ビットピクセル画像。黒と白  RGB
             pil_img = pil_img.convert('L') #画像をLに変換  RGB
             print("L")
-        pil_img.save(modelDirectory+"/img/predict/pre_"+model_name+str(num)+".jpg")
+        pil_img.save(currentDirectory+"/img"+pre_dir+"/pre_"+model_name+str(num)+".jpg")
     
     elif training == 3: #入力画像(npy)から予測画像(npy)を生成し保存
         num = 0 #247
         #データセットからnpy画像を読み込み
-        x_test = util.load_dataset2(path_train+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
+        # x_test = util.load_dataset2(path_train+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
+        x_test = util.load_dataset2(currentDirectory+"/img"+pre_dir+"/"+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
         print("x_shape : ", x_test.shape) # (枚数,x,y,1), 実数
         #モデルを読み込み
-        fname_weight = modelDirectory + "/model/model_" + model_name + "_2_4_divide_random" + ".hdf5" #"_opj2"
+        fname_weight = currentDirectory + "/model/model_" + model_name + dataset_name + ".hdf5" #"_opj2", "_2_4_divide_random"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)
@@ -260,7 +272,7 @@ if __name__ == '__main__':
         pre = pre[:,:,0]
         print("pre_shape : ", pre.shape) # (x, y), 実数
         #画像をnpyで保存
-        np.save(modelDirectory+"/img/predict/pre_"+model_name+str(num)+".npy", pre)
+        np.save(currentDirectory+"/img"+pre_dir+"/pre_"+model_name+str(num)+".npy", pre)
     
     elif training == 4: #入力画像, 正解画像を再生計算して保存(再生計算の確認)
         ext = ".npy"
@@ -293,7 +305,7 @@ if __name__ == '__main__':
             if pil_img.mode != 'RGB':
                 pil_img = pil_img.convert('RGB') #画像をRGBに変換
                 print("RGB")
-            pil_img.save(modelDirectory+"/img/predict/rec_correct"+str(num)+"_z"+str(i)+".jpg")
+            pil_img.save(currentDirectory+"/img/predict/rec_correct"+str(num)+"_z"+str(i)+".jpg")
             # 距離更新
             i += 1
             z += 0.01
@@ -310,7 +322,7 @@ if __name__ == '__main__':
         x_test = x_test.astype('float32')
         # x_test /= x_test.max()
         #モデルを読み込み
-        fname_weight = modelDirectory + "/model_" + model_name + ".hdf5"
+        fname_weight = currentDirectory + "/model_" + model_name + ".hdf5"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)
@@ -332,7 +344,7 @@ if __name__ == '__main__':
         x_test = x_test.reshape(1,512,512,1)
         print("x_shape : ", x_test.shape)
         #モデルを読み込み
-        fname_weight = modelDirectory + "/model_" + model_name + ".hdf5"
+        fname_weight = currentDirectory + "/model_" + model_name + ".hdf5"
         net.load_weights(fname_weight)
         #予測
         pre = net.predict(x_test, verbose=0)
@@ -350,7 +362,7 @@ if __name__ == '__main__':
         if pil_img.mode != 'RGB':
             pil_img = pil_img.convert('RGB') #画像をRGBに変換
             print("RGB")
-        pil_img.save(modelDirectory+"/img/predict/rec_pre"+str(num)+ext)
+        pil_img.save(currentDirectory+"/img/predict/rec_pre"+str(num)+ext)
     
     elif training == 7: #入力画像を再生計算して保存
         ext = ".jpg"
@@ -375,11 +387,11 @@ if __name__ == '__main__':
         if pil_img.mode != 'L':
             pil_img = pil_img.convert('L') #画像をRGBに変換
             print("L")
-        pil_img.save(modelDirectory+"/img/rex_x_test"+str(num)+ext)
+        pil_img.save(currentDirectory+"/img/rex_x_test"+str(num)+ext)
 
     elif training == 8: #実験
         x_test = Image.open(path_train+"/hol_fix0.jpg")
-        x_test = Image.open(modelDirectory+"/img/predict/pre0.jpg")
+        x_test = Image.open(currentDirectory+"/img/predict/pre0.jpg")
         print("type",type(x_test))
         print("mode",x_test.mode)
         x_test = np.array(x_test)
@@ -390,4 +402,4 @@ if __name__ == '__main__':
         # if pil_img.mode != 'RGB':
         #     pil_img = pil_img.convert('RGB') #画像をRGBに変換
         #     print("RGB")
-        pil_img.save(modelDirectory+"/img/sample.png")
+        pil_img.save(currentDirectory+"/img/sample.png")

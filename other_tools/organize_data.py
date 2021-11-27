@@ -10,10 +10,10 @@ import math
 
 
 # jpgを再生計算(課題3参照)
-def recurrent_calculation(input_file, path):
+def recurrent_calculation(input_file, path, pre_dir):
     import cmath
     ## inputホログラム画像の読み込み
-    in1 = np.array(Image.open(path+"img/predict/"+input_file).convert('L')) #Imageで開いた後配列に変換(mode：L)
+    in1 = np.array(Image.open(path+"img"+pre_dir+"/"+input_file).convert('L')) #Imageで開いた後配列に変換(mode：L)
 
     in1 = in1 - np.average(in1) #平均値引いてる(npyのrealは-1～1だから？)
 
@@ -152,15 +152,15 @@ def recurrent_calculation(input_file, path):
         if pil_img.mode != 'RGB':
             pil_img = pil_img.convert('RGB') #画像をRGBに変換
             print("RGB")
-        pil_img.save(path+"img/predict/rec_"+input_file.split('.')[0]+"_jpg"+".png") #A_g2
+        pil_img.save(path+"img"+pre_dir+"/rec_"+input_file.split('.')[0]+"_jpg"+".png") #A_g2
         z += 0.1
 
 # npyを再生計算(課題3参照)
-def recurrent_calculation_npy(input_file, path):
+def recurrent_calculation_npy(input_file, path, pre_dir):
     import cmath
     ## inputホログラム画像の読み込み
     # in1 = np.array(Image.open(path+"img/predict/"+input_file).convert('L')) #Imageで開いた後配列に変換(mode：L)
-    in1 = np.load(path+"img/predict/"+input_file)
+    in1 = np.load(path+"img"+pre_dir+"/"+input_file) #"img/predict/", "img/predict_random/"
 
     # in1 = in1 - np.average(in1) #平均値引いてる
 
@@ -254,16 +254,16 @@ def recurrent_calculation_npy(input_file, path):
         if pil_img.mode != 'RGB':
             pil_img = pil_img.convert('RGB') #画像をRGBに変換
             print("RGB")
-        pil_img.save(path+"img/predict/rec_"+input_file.split('.')[0]+"_npy"+".png") #A_g2
+        pil_img.save(path+"img"+pre_dir+"/rec_"+input_file.split('.')[0]+"_npy"+".png") #predict, predict_other / A_g2
         z += 0.1
 
-def calc_ssim(path, imgs):
+def calc_ssim(path, imgs, pre_dir):
     from skimage.metrics import structural_similarity # from skimage.measure import compare_ssim#, compare_psnr
     from sklearn.metrics import mean_squared_error
     import cv2
     
-    img1 = cv2.imread(path + "img/predict/" + imgs[0], cv2.IMREAD_GRAYSCALE)
-    img2 = cv2.imread(path + "img/predict/" + imgs[1], cv2.IMREAD_GRAYSCALE)
+    img1 = cv2.imread(path + "img"+pre_dir+"/" + imgs[0], cv2.IMREAD_GRAYSCALE) #predict, predict_other
+    img2 = cv2.imread(path + "img"+pre_dir+"/" + imgs[1], cv2.IMREAD_GRAYSCALE) #predict, predict_other
     # input_shape = (512, 512, 1)
     # img1 = load_dataset2(path+"test/hol_float%d"+".jpg", input_shape,(512,512), (0,1))
     # img2 = load_dataset2(path+"test/hol_fix%d"+".jpg", input_shape,(512,512), (0,1))
@@ -619,23 +619,29 @@ if __name__ == '__main__':
     path = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/"
     pj_path = "C:/Users/y.inoue/Desktop/Laboratory/research/tensorflow2-horn-low-accuracy-git/"
     # path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
-    mode = 2 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
+    mode = 1 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
+    dataset_type = 0 #0：オリジナル(_opj2, predict)、1：2_4 devideランダム(_2_4_divide_random, predict_random)
+
+    if dataset_type == 0:
+        pre_dir = "/predict"
+    elif dataset_type == 1:
+        pre_dir = "/predict_random"
 
     if mode == 0:
         input_file = "pre_ResNet0.jpg" #"cube140.bmp" #"pre_unet0.jpg" #rect.bmp img02.jpg hol_fix0.jpg pre_ResNet0
         recurrent_calculation(input_file, pj_path)
 
     elif mode == 1:
-        input_file = "hol_float0_random.npy" # hol_fix0, hol_float0, pre_unet0, pre_ResNet0 / pre_unet0_opj2.npy, pre_unet0_2_4_divide_random.npy
-        recurrent_calculation_npy(input_file, pj_path)
+        input_file = "pre_unet0.npy" # hol_fix0, hol_float0, pre_unet0, pre_ResNet0 / pre_unet0_opj2.npy, pre_unet0_2_4_divide_random.npy // pre_unet0
+        recurrent_calculation_npy(input_file, pj_path, pre_dir)
 
     elif mode == 2:
         # ホログラム
         # imgs = ["hol_float0.jpg", "hol_fix0.jpg"]  # hol_fix0, pre_unet0, pre_ResNet0
         # 再生像
         # imgs = ["rec_hol_float0_npy.png", "rec_pre_unet0_2_4_divide_npy.png"]  # rec_hol_fix0_npy, rec_pre_unet0_npy, rec_pre_ResNet0_npy / rec_pre_unet0_opj2_npy.png, rec_pre_unet0_2_4_divide_npy.png
-        imgs = ["rec_hol_float0_random_npy.png", "rec_pre_unet0_2_4_divide_random_npy.png"]
-        calc_ssim(pj_path, imgs)
+        imgs = ["rec_hol_float0_npy.png", "rec_pre_ResNet0_npy.png"]
+        calc_ssim(pj_path, imgs, pre_dir)
 
     elif mode == 3:
         remove_rename(path)
