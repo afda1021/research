@@ -161,6 +161,7 @@ def recurrent_calculation_npy(input_file, path, pre_dir):
     ## inputホログラム画像の読み込み
     # in1 = np.array(Image.open(path+"img/predict/"+input_file).convert('L')) #Imageで開いた後配列に変換(mode：L)
     in1 = np.load(path+"img"+pre_dir+"/"+input_file) #"img/predict/", "img/predict_random/"
+    # in1 = np.load("C:/Users/y.inoue/Desktop/Laboratory/research/object_calc/test_create_image/hol_float5.npy")
 
     # in1 = in1 - np.average(in1) #平均値引いてる
 
@@ -255,6 +256,7 @@ def recurrent_calculation_npy(input_file, path, pre_dir):
             pil_img = pil_img.convert('RGB') #画像をRGBに変換
             print("RGB")
         pil_img.save(path+"img"+pre_dir+"/rec_"+input_file.split('.')[0]+"_npy"+".png") #predict, predict_other / A_g2
+        # pil_img.save("C:/Users/y.inoue/Desktop/Laboratory/research/object_calc/test_create_image/rec_hol_float5_npy.png")
         z += 0.1
 
 def calc_ssim(path, imgs, pre_dir):
@@ -542,7 +544,7 @@ def renumber_img():
             removed_num += 1
     print(file_num, removed_num)
 
-# low holのnpyとjpgの対応 (npy：mag=0の複素数、jpg：実数)
+# low holのnpyとjpgの対応 (npy：imag=0の複素数、jpg：実数)
 def comfirm_npy_jpg():
     hol_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
     num = 0
@@ -583,25 +585,55 @@ def create_dataset():
     in_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
     out_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_random/"
     num = 333
-    # ランダムな複数のholを足し合わせて新たなholを生成,保存
-    for i in range(160):
+    # 学習用のデータ、ランダムな複数のholを足し合わせて新たなholを生成,保存
+    # for i in range(160):
+    #     n1 = random.randrange(num)
+    #     n2 = random.randrange(num)
+    #     x1 = np.load(in_path+"hol_fix"+str(n1)+".npy")
+    #     x2 = np.load(in_path+"hol_fix"+str(n2)+".npy")
+    #     y1 = np.load(in_path+"hol_float"+str(n1)+".npy")
+    #     y2 = np.load(in_path+"hol_float"+str(n2)+".npy")
+    #     if i < 50: #2つを足し合わせる
+    #         np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2)/2) #i+num+1
+    #         np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2)/2) #i+num+1
+    #         # print(n1, n2)
+    #     elif i < 100: #3つを足し合わせる
+    #         n3 = random.randrange(num)
+    #         x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
+    #         y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
+    #         np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3)/3)
+    #         np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3)/3)
+    #     elif i < 160: #4つを足し合わせる
+    #         n3 = random.randrange(num)
+    #         n4 = random.randrange(num)
+    #         x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
+    #         x4 = np.load(in_path+"hol_fix"+str(n4)+".npy")
+    #         y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
+    #         y4 = np.load(in_path+"hol_float"+str(n4)+".npy")
+    #         np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3+x4)/4)
+    #         np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3+y4)/4)
+    #         # print(n1, n2, n3)
+    #     # np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2)/2) #i+num+1
+    #     # np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2)/2) #i+num+1
+
+    # 予測用のデータ
+    for i in range(200, 204):
         n1 = random.randrange(num)
         n2 = random.randrange(num)
         x1 = np.load(in_path+"hol_fix"+str(n1)+".npy")
         x2 = np.load(in_path+"hol_fix"+str(n2)+".npy")
         y1 = np.load(in_path+"hol_float"+str(n1)+".npy")
         y2 = np.load(in_path+"hol_float"+str(n2)+".npy")
-        if i < 50: #2つを足し合わせる
+        if i < 201: #2つを足し合わせる
             np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2)/2) #i+num+1
             np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2)/2) #i+num+1
-            # print(n1, n2)
-        elif i < 100: #3つを足し合わせる
+        elif i < 202: #3つを足し合わせる
             n3 = random.randrange(num)
             x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
             y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
             np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3)/3)
             np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3)/3)
-        elif i < 160: #4つを足し合わせる
+        elif i < 203: #4つを足し合わせる
             n3 = random.randrange(num)
             n4 = random.randrange(num)
             x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
@@ -610,22 +642,45 @@ def create_dataset():
             y4 = np.load(in_path+"hol_float"+str(n4)+".npy")
             np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3+x4)/4)
             np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3+y4)/4)
-            # print(n1, n2, n3)
-        # np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2)/2) #i+num+1
-        # np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2)/2) #i+num+1
+        elif i < 204: #5つを足し合わせる
+            n3 = random.randrange(num)
+            n4 = random.randrange(num)
+            n5 = random.randrange(num)
+            x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
+            x4 = np.load(in_path+"hol_fix"+str(n4)+".npy")
+            x5 = np.load(in_path+"hol_fix"+str(n5)+".npy")
+            y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
+            y4 = np.load(in_path+"hol_float"+str(n4)+".npy")
+            y5 = np.load(in_path+"hol_float"+str(n5)+".npy")
+            np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3+x4+x5)/5)
+            np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3+y4+y5)/5)
+    
+def create_dataset_fish():
+    test_path = "C:/Users/y.inoue/Desktop/Laboratory/research/object_calc/test_create_image/"
+
+    # ランダムな複数のholを足し合わせて新たなholを生成,保存
+    x1 = np.load(test_path+"hol_fix"+str(1)+".npy")
+    x2 = np.load(test_path+"hol_fix"+str(2)+".npy")
+    x3 = np.load(test_path+"hol_fix"+str(3)+".npy")
+    y1 = np.load(test_path+"hol_float"+str(1)+".npy")
+    y2 = np.load(test_path+"hol_float"+str(2)+".npy")
+    y3 = np.load(test_path+"hol_float"+str(3)+".npy")
+    # RGBの3つを足し合わせる
+    np.save(test_path+"hol_fix"+str(5)+".npy", (x1+x2+x3)/3)
+    np.save(test_path+"hol_float"+str(5)+".npy", (y1+y2+y3)/3)
 
 
 if __name__ == '__main__':
     path = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/"
     pj_path = "C:/Users/y.inoue/Desktop/Laboratory/research/tensorflow2-horn-low-accuracy-git/"
     # path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
-    mode = 1 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
-    dataset_type = 0 #0：オリジナル(_opj2, predict)、1：2_4 devideランダム(_2_4_divide_random, predict_random)
+    mode = 2 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
+    dataset_type = 1 #0：オリジナル(_opj2, predict)、1：2_4 devideランダム(_2_4_divide_random, predict_random)
 
     if dataset_type == 0:
-        pre_dir = "/predict"
+        pre_dir = "/predict_other" #/predict, /predict_other
     elif dataset_type == 1:
-        pre_dir = "/predict_random"
+        pre_dir = "/predict_random_other" #/predict_random, /predict_random_other
 
     if mode == 0:
         input_file = "pre_ResNet0.jpg" #"cube140.bmp" #"pre_unet0.jpg" #rect.bmp img02.jpg hol_fix0.jpg pre_ResNet0
@@ -640,7 +695,7 @@ if __name__ == '__main__':
         # imgs = ["hol_float0.jpg", "hol_fix0.jpg"]  # hol_fix0, pre_unet0, pre_ResNet0
         # 再生像
         # imgs = ["rec_hol_float0_npy.png", "rec_pre_unet0_2_4_divide_npy.png"]  # rec_hol_fix0_npy, rec_pre_unet0_npy, rec_pre_ResNet0_npy / rec_pre_unet0_opj2_npy.png, rec_pre_unet0_2_4_divide_npy.png
-        imgs = ["rec_hol_float0_npy.png", "rec_pre_ResNet0_npy.png"]
+        imgs = ["rec_hol_float0_npy.png", "rec_hol_fix0_npy.png"]
         calc_ssim(pj_path, imgs, pre_dir)
 
     elif mode == 3:
@@ -668,3 +723,5 @@ if __name__ == '__main__':
 
     elif mode == 14: # ホログラムをランダムに足し合わせてデータセットを生成
         create_dataset()
+    elif mode == 15: # rgb魚ホログラムを足し合わせる
+        create_dataset_fish()

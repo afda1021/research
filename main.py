@@ -1,6 +1,7 @@
 ## dataset：hol_horn
 
 #----------------------GPUの上限とか設定する何か？----------------------------
+## 計算時間は早くなるが画素数が増えるとエラーが発生
 #https://qiita.com/masudam/items/c229e3c75763e823eed5
 # import tensorflow as tf
 # gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -69,7 +70,7 @@ def plot_loss(history, model_name, epochs):
     plt.xlabel('epoch')
     plt.ylabel('loss')
     plt.xlim(0, epochs)
-    # plt.ylim(0, 0.04)
+    plt.ylim(0, 0.04)
     plt.savefig("./img/loss_"+model_name+".png") #plt.savefig("./img/graph.eps",dpi=600)
     plt.show()
 
@@ -104,8 +105,8 @@ def loss_mse_l1(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    training = 0 #0：学習、1：テスト(jpg→jpg)、2:テスト(npy→jpg)、3:テスト(npy→npy)、/ 4:テスト(再生像jpg)、5： テスト(bmp)？、6：テスト(jpg)？、7：再生計算？
-    model_type = 0 #0：U-Net、1：ResNet
+    training = 3 #0：学習、1：テスト(jpg→jpg)、2:テスト(npy→jpg)、3:テスト(npy→npy)、/ 4:テスト(再生像jpg)、5： テスト(bmp)？、6：テスト(jpg)？、7：再生計算？
+    model_type = 1 #0：U-Net、1：ResNet
     dataset_type = 1 #0：オリジナル(_opj2, predict)、1：2_4 devideランダム(_2_4_divide_random, predict_random)
 
     batch_size = 10
@@ -117,7 +118,7 @@ if __name__ == '__main__':
     d_nx, d_ny = 512, 512 #512, 512 / 128, 128
     input_shape = (d_ny, d_nx, 1)
 
-    path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/" # hol_horn_low_accuracy_16_4_21_small, hol_horn_low_accuracy_16_4_21_small, object_calc/test_create_image
+    # path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/" # hol_horn_low_accuracy_16_4_21_small, hol_horn_low_accuracy_16_4_21_small, object_calc/test_create_image
     
     #loss_func = "mse"  #損失関数
     lr=1e-4  #lerning rate
@@ -126,11 +127,11 @@ if __name__ == '__main__':
     if dataset_type == 0:
         path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/" #object_calc/test_create_image
         dataset_name = "_opj2"
-        pre_dir = "/predict"
+        pre_dir = "/predict" #/predict, /predict_other
     elif dataset_type == 1:
         path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_random/"
         dataset_name = "_2_4_divide_random"
-        pre_dir = "/predict_random"
+        pre_dir = "/predict_random" #/predict_random, /predict_random_other
 
     if model_type == 0:
         net = model.unet2(input_shape)  #U-Netのモデル
@@ -148,6 +149,7 @@ if __name__ == '__main__':
         ext = ".npy"
         # 訓練データの読み込み
         x_train = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (1,140)) #(0,496)
+        # x_train = util.load_dataset_complex(path_train+"hol_fix%d"+ext,(ny,nx), (1,140)) #(0,496)
         print("x_shae : ", x_train.shape)  # (枚数,x,y,1)
         y_train = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (1,140))
         print("y_shae : ", y_train.shape)
@@ -160,6 +162,7 @@ if __name__ == '__main__':
         x_test = util.load_dataset2(path_train+"hol_fix%d"+ext, input_shape,(ny,nx), (0,1)) #(506,507)
         print("x_shae : ", x_test.shape)
         y_test = util.load_dataset2(path_train+"hol_float%d"+ext, input_shape,(ny,nx), (0,1))
+        print(x_train)
 
         x_train = x_train.astype('float32')
         y_train = y_train.astype('float32')
