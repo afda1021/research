@@ -7,6 +7,7 @@ import glob
 from PIL import Image
 # import os
 import math
+import random
 
 
 # jpgを再生計算(課題3参照)
@@ -582,11 +583,14 @@ def comfirm_npy_jpg():
 
 def create_dataset():
     import random
-    in_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
-    out_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_random/"
-    num = 333
+    in_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_new/" # hol_horn_low_accuracy_16_4_21_small, hol_horn_low_accuracy_new
+    out_path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_new_random/" # hol_horn_low_accuracy_16_4_21_small_random, hol_horn_low_accuracy_new_random
+    num = 453 #333
+    n = 160
     # 学習用のデータ、ランダムな複数のholを足し合わせて新たなholを生成,保存
-    # for i in range(160):
+    # l = list(range(n))
+    # lr = random.sample(l, len(l)) # ランダムな順序で生成する
+    # for i in range(n):
     #     n1 = random.randrange(num)
     #     n2 = random.randrange(num)
     #     x1 = np.load(in_path+"hol_fix"+str(n1)+".npy")
@@ -594,15 +598,15 @@ def create_dataset():
     #     y1 = np.load(in_path+"hol_float"+str(n1)+".npy")
     #     y2 = np.load(in_path+"hol_float"+str(n2)+".npy")
     #     if i < 50: #2つを足し合わせる
-    #         np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2)/2) #i+num+1
-    #         np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2)/2) #i+num+1
+    #         np.save(out_path+"hol_fix"+str(lr[i])+".npy", (x1+x2)/2) #i+num+1
+    #         np.save(out_path+"hol_float"+str(lr[i])+".npy", (y1+y2)/2) #i+num+1
     #         # print(n1, n2)
     #     elif i < 100: #3つを足し合わせる
     #         n3 = random.randrange(num)
     #         x3 = np.load(in_path+"hol_fix"+str(n3)+".npy")
     #         y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
-    #         np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3)/3)
-    #         np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3)/3)
+    #         np.save(out_path+"hol_fix"+str(lr[i])+".npy", (x1+x2+x3)/3)
+    #         np.save(out_path+"hol_float"+str(lr[i])+".npy", (y1+y2+y3)/3)
     #     elif i < 160: #4つを足し合わせる
     #         n3 = random.randrange(num)
     #         n4 = random.randrange(num)
@@ -610,8 +614,8 @@ def create_dataset():
     #         x4 = np.load(in_path+"hol_fix"+str(n4)+".npy")
     #         y3 = np.load(in_path+"hol_float"+str(n3)+".npy")
     #         y4 = np.load(in_path+"hol_float"+str(n4)+".npy")
-    #         np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2+x3+x4)/4)
-    #         np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2+y3+y4)/4)
+    #         np.save(out_path+"hol_fix"+str(lr[i])+".npy", (x1+x2+x3+x4)/4)
+    #         np.save(out_path+"hol_float"+str(lr[i])+".npy", (y1+y2+y3+y4)/4)
     #         # print(n1, n2, n3)
     #     # np.save(out_path+"hol_fix"+str(i)+".npy", (x1+x2)/2) #i+num+1
     #     # np.save(out_path+"hol_float"+str(i)+".npy", (y1+y2)/2) #i+num+1
@@ -675,12 +679,12 @@ if __name__ == '__main__':
     pj_path = "C:/Users/y.inoue/Desktop/Laboratory/research/tensorflow2-horn-low-accuracy-git/"
     # path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
     mode = 2 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
-    dataset_type = 1 #0：オリジナル(_opj2, predict)、1：2_4 devideランダム(_2_4_divide_random, predict_random)
+    dataset_type = 0 #0：オリジナル(_opj2, predict)、1：2_4 divideランダム(_2_4_divide_random, predict_random)
 
     if dataset_type == 0:
-        pre_dir = "/predict_other" #/predict, /predict_other
+        pre_dir = "/predict" #/predict, /predict_other
     elif dataset_type == 1:
-        pre_dir = "/predict_random_other" #/predict_random, /predict_random_other
+        pre_dir = "/predict_random" #/predict_random, /predict_random_other
 
     if mode == 0:
         input_file = "pre_ResNet0.jpg" #"cube140.bmp" #"pre_unet0.jpg" #rect.bmp img02.jpg hol_fix0.jpg pre_ResNet0

@@ -105,9 +105,9 @@ def loss_mse_l1(y_true, y_pred):
 
 
 if __name__ == '__main__':
-    training = 3 #0：学習、1：テスト(jpg→jpg)、2:テスト(npy→jpg)、3:テスト(npy→npy)、/ 4:テスト(再生像jpg)、5： テスト(bmp)？、6：テスト(jpg)？、7：再生計算？
-    model_type = 1 #0：U-Net、1：ResNet
-    dataset_type = 1 #0：オリジナル(_opj2, predict)、1：2_4 devideランダム(_2_4_divide_random, predict_random)
+    training = 0 #(主に0,3) 0：学習、1：テスト(jpg→jpg)、2:テスト(npy→jpg)、3:テスト(npy→npy)、/ 4:テスト(再生像jpg)、5： テスト(bmp)？、6：テスト(jpg)？、7：再生計算？
+    model_type = 0 #0：U-Net、1：ResNet
+    dataset_type = 0 #0：オリジナル(_opj2, predict)、1：2_4 divideランダム(_2_4_divide_random, predict_random)
 
     batch_size = 10
     epochs = 30
@@ -125,11 +125,11 @@ if __name__ == '__main__':
     adam = optimizers.Adam(lr=lr)
     
     if dataset_type == 0:
-        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/" #object_calc/test_create_image
+        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_new/" # hol_horn_low_accuracy_16_4_21_small
         dataset_name = "_opj2"
         pre_dir = "/predict" #/predict, /predict_other
     elif dataset_type == 1:
-        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small_random/"
+        path_train = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_new_random/" # hol_horn_low_accuracy_16_4_21_small_random
         dataset_name = "_2_4_divide_random"
         pre_dir = "/predict_random" #/predict_random, /predict_random_other
 
@@ -260,7 +260,7 @@ if __name__ == '__main__':
         pil_img.save(currentDirectory+"/img"+pre_dir+"/pre_"+model_name+str(num)+".jpg")
     
     elif training == 3: #入力画像(npy)から予測画像(npy)を生成し保存
-        num = 0 #247
+        num = 0 #0, 247
         #データセットからnpy画像を読み込み
         # x_test = util.load_dataset2(path_train+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
         x_test = util.load_dataset2(currentDirectory+"/img"+pre_dir+"/"+"hol_fix%d"+".npy", input_shape, (ny,nx), (num,num+1)) #npyは複素数だがimagが0なので問題ない、realのみ読み込み
