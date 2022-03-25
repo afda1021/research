@@ -387,8 +387,9 @@ def comfirm_complex_npy_plot(path):
     x, y = np.array([]), np.array([])
     for num in range(1,30,1):
     #データセットからjpg画像を読み込み
-        y_npy = np.load(path+"SUNRGBD2/hol/hol"+str(num).zfill(4)+".jpg.npy")
-
+        # y_npy = np.load(path+"SUNRGBD2/hol/hol"+str(num).zfill(4)+".jpg.npy")
+        y_npy = np.load("C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_new/hol_fix"+str(num)+".npy")
+        print(y_npy)
         for i in range(256):
             x = np.append(x, y_npy[i,:].real)
             y = np.append(y, y_npy[i,:].imag)
@@ -673,25 +674,49 @@ def create_dataset_fish():
     np.save(test_path+"hol_fix"+str(5)+".npy", (x1+x2+x3)/3)
     np.save(test_path+"hol_float"+str(5)+".npy", (y1+y2+y3)/3)
 
+def create_png_from_npy(input_file, path):
+    in1 = np.load(path+input_file)
+    NX = in1.shape[1] #640*2 #1024
+    NY = in1.shape[0] #360*2 #1024
+    img_out = np.zeros((int(NY),int(NX)))
+    # 正規化、格納
+    min_val = in1[0][0]
+    max_val = in1[0][0]
+    for ay in range(0, int(NY)):
+        for ax in range(0, int(NX)):
+            if in1[ay][ax] < min_val:
+                min_val = in1[ay][ax]
+            elif in1[ay][ax] > max_val:
+                max_val = in1[ay][ax]
+    for ay in range(0, int(NY)):
+        for ax in range(0, int(NX)):
+            img_out[ay][ax] = (in1[ay][ax] - min_val) / (max_val - min_val) * 255
+
+    #画像を保存
+    pil_img = Image.fromarray(img_out)
+    if pil_img.mode != 'RGB':
+        pil_img = pil_img.convert('RGB') #画像をRGBに変換
+        print("RGB")
+    pil_img.save(path+input_file.split('.')[0]+".png") #predict, predict_other / A_g2
 
 if __name__ == '__main__':
     path = "C:/Users/y.inoue/Desktop/Laboratory/research/dataset/"
     pj_path = "C:/Users/y.inoue/Desktop/Laboratory/research/tensorflow2-horn-low-accuracy-git/"
     # path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_16_4_21_small/"
-    mode = 2 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
-    dataset_type = 0 #0：オリジナル(_opj2, predict)、1：2_4 divideランダム(_2_4_divide_random, predict_random)
+    mode = 16 # 0:再生計算(jpg)、1:再生計算(npy)、2:SSIM, mse計算、/ 3：rgb,d画像のファイル移動,ファイル名変更、4：rgb画像のjpgからnpyを生成、5：rgb画像のjpgをリサイズ、6：jpgを確認、12:datasetからノイズ画像を除く
+    dataset_type = 1 #0：オリジナル(_opj2, predict)、1：2_4 divideランダム(_2_4_divide_random, predict_random)
 
     if dataset_type == 0:
         pre_dir = "/predict" #/predict, /predict_other
     elif dataset_type == 1:
-        pre_dir = "/predict_random" #/predict_random, /predict_random_other
+        pre_dir = "/predict_random_other" #/predict_random, /predict_random_other
 
     if mode == 0:
         input_file = "pre_ResNet0.jpg" #"cube140.bmp" #"pre_unet0.jpg" #rect.bmp img02.jpg hol_fix0.jpg pre_ResNet0
         recurrent_calculation(input_file, pj_path)
 
     elif mode == 1:
-        input_file = "pre_unet0.npy" # hol_fix0, hol_float0, pre_unet0, pre_ResNet0 / pre_unet0_opj2.npy, pre_unet0_2_4_divide_random.npy // pre_unet0
+        input_file = "hol_fix1.npy" # hol_fix0, hol_float0, pre_unet0, pre_ResNet0 / pre_unet0_opj2.npy, pre_unet0_2_4_divide_random.npy // pre_unet0
         recurrent_calculation_npy(input_file, pj_path, pre_dir)
 
     elif mode == 2:
@@ -699,7 +724,7 @@ if __name__ == '__main__':
         # imgs = ["hol_float0.jpg", "hol_fix0.jpg"]  # hol_fix0, pre_unet0, pre_ResNet0
         # 再生像
         # imgs = ["rec_hol_float0_npy.png", "rec_pre_unet0_2_4_divide_npy.png"]  # rec_hol_fix0_npy, rec_pre_unet0_npy, rec_pre_ResNet0_npy / rec_pre_unet0_opj2_npy.png, rec_pre_unet0_2_4_divide_npy.png
-        imgs = ["rec_hol_float0_npy.png", "rec_hol_fix0_npy.png"]
+        imgs = ["rec_hol_float1_npy.png", "rec_pre_ResNet1_npy.png"]
         calc_ssim(pj_path, imgs, pre_dir)
 
     elif mode == 3:
@@ -729,3 +754,7 @@ if __name__ == '__main__':
         create_dataset()
     elif mode == 15: # rgb魚ホログラムを足し合わせる
         create_dataset_fish()
+    elif mode == 16: # npyからpng画像を生成
+        path = "C:/Users/y.inoue/Desktop/Laboratory/research/hol_horn_low_accuracy_new_random/"
+        input_file = "hol_float202.npy"
+        create_png_from_npy(input_file, path)
